@@ -6,7 +6,7 @@ import streamlit as st
 # 1. LOAD MODEL (lr) & VECTORIZER (CountVectorizer)
 # ==========================================
 with open('Sentimen/Deployment/model_sentimen.pkl', 'rb') as f:
-    model = pickle.load(f)
+    lr = pickle.load(f)
 
 with open('Sentimen/Deployment/vectorizer.pkl', 'rb') as f:
     vectorizer = pickle.load(f)
@@ -45,11 +45,11 @@ if user_input:
     text_vector = vectorizer.transform([text_ready])
     
    # 3. Prediksi Sentimen menggunakan model Logistic Regression (lr)
-    prediksi = model_lr.predict(text_vector)[0]
+    prediksi = lr.predict(text_vector)[0]
     
     # 4. Hitung Confidence Score (Probabilitas dari Logistic Regression)
     # HAPUS [0] di ujung predict_proba, ganti menjadi seperti di bawah ini:
-    probabilitas = model_lr.predict_proba(text_vector)
+    probabilitas = lr.predict_proba(text_vector)
     confidence_score = max(probabilitas[0]) * 100
     
     # 5. Tampilkan Hasil Ke User
