@@ -56,7 +56,7 @@ Sentimen/
 
 ### 1. Advanced Text Preprocessing & Tokenization
 
-* Slang Normalization: Mengubah variasi kata gaul, singkatan, ataupun umpatan ('anjer', 'ajggg', 'njing', 'bangsyattttt') menjadi representasi kata baku penunjuk emosi negatif terpusat ('sial').
+* Slang Normalization: Mengubah variasi kata gaul, singkatan, ataupun umpatan menjadi representasi kata baku penunjuk emosi negatif.
 
 * Custom Stopwords Removal: Menyaring kata-kata tidak bermakna dengan tetap mempertahankan kata negasi krusial seperti ('tidak', 'jangan', 'bukan') agar makna sentimen tidak terbalik.
 
