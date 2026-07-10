@@ -3,6 +3,7 @@
 Aplikasi web untuk menganalisis sentimen publik (Positif, Netral, Negatif) terhadap isu pelemahan nilai tukar Rupiah menggunakan metode **Machine Learning (Logistic Regression)** dan pipeline NLP tingkat lanjut, dibangun dengan **Streamlit**.
 
 🔗 **Live Demo:** https://dewi-portofolio-sentimen-analysis.streamlit.app/
+
 [![Thumbnail Video YouTube](https://img.youtube.com/vi/2FPx1_CUzYQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=2FPx1_CUzYQ)
 *Klik gambar di atas untuk melihat video YouTube sumber pengambilan data komentar (scraping).*
 
