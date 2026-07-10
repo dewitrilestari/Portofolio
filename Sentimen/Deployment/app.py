@@ -1,6 +1,9 @@
 import pickle
 import pandas as pd
 import streamlit as st
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+factory = StemmerFactory()
+stemmer = factory.create_stemmer()
 
 # ==========================================
 # 1. LOAD MODEL (lr) & VECTORIZER (CountVectorizer)
@@ -40,6 +43,7 @@ user_input = st.text_input("Ketik kalimat di sini:", placeholder="Contoh: Rupiah
 if user_input:
     # 1. Preprocessing teks input dari pengguna
     text_ready = clean_text(user_input)
+    text_stemmed = stemmer.stem(user_input)
     
     # 2. Transformasi ke angka dengan CountVectorizer milikmu
     text_vector = vectorizer.transform([text_ready])
