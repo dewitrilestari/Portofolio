@@ -59,19 +59,48 @@ if user_input:
     
     # 6. Tampilkan Hasil Ke User
     st.markdown("---")
-    st.subheader("Hasil Analisis:")
+    st.markdown("### 🔍 Hasil Analisis")
     
-    # Memberi warna box berdasarkan hasil prediksi sentimen
-    if prediksi.lower() == 'positive' or prediksi == 'positif':
-        st.success(f"**Sentimen:** {prediksi.upper()}")
-    elif prediksi.lower() == 'negative' or prediksi == 'negatif':
-        st.error(f"**Sentimen:** {prediksi.upper()}")
-    else:
-        st.warning(f"**Sentimen:** {prediksi.upper()}")
-        
-    st.info(f"**💡 Confidence Score:** {confidence_score:.2f}%")
-    # Teks penjelasan singkat tambahan yang kamu inginkan:
-    st.caption(
+    # Membuat 2 kolom untuk menyejajarkan hasil
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Kategori Sentimen**")
+        if prediksi.lower() == 'positive' or prediksi == 'positif':
+            st.markdown(
+                "<div style='background-color: #d4edda; color: #155724; padding: 15px; "
+                "border-radius: 10px; border-left: 5px solid #28a745; font-size: 20px; font-weight: bold;'>"
+                "🟢 POSITIF"
+                "</div>", 
+                unsafe_allow_html=True
+            )
+        elif prediksi.lower() == 'negative' or prediksi == 'negatif':
+            st.markdown(
+                "<div style='background-color: #f8d7da; color: #721c24; padding: 15px; "
+                "border-radius: 10px; border-left: 5px solid #dc3545; font-size: 20px; font-weight: bold;'>"
+                "🔴 NEGATIF"
+                "</div>", 
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                "<div style='background-color: #fff3cd; color: #856404; padding: 15px; "
+                "border-radius: 10px; border-left: 5px solid #ffc107; font-size: 20px; font-weight: bold;'>"
+                "🟡 NETRAL"
+                "</div>", 
+                unsafe_allow_html=True
+            )
+            
+    with col2:
+        st.markdown("**Tingkat Keyakinan Model**")
+        # Menampilkan metrik besar yang bersih
+        st.metric(label="Confidence Score", value=f"{confidence_score:.2f}%")
+        # Menambahkan progress bar visual di bawah nilai persentase
+        st.progress(int(confidence_score))
+
+    # Teks penjelasan di bagian bawah dengan box informasi yang rapi
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.info(
         f"**Maksud Nilai:** Model memiliki tingkat keyakinan sebesar **{confidence_score:.2f}%** "
         f"bahwa kalimat di atas termasuk ke dalam kategori sentimen **{prediksi.upper()}** "
         f"berdasarkan pola kata yang telah dipelajari pada data training."
