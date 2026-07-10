@@ -41,22 +41,23 @@ st.write("Masukkan kalimat pendapat atau komentar untuk memprediksi sentimennya.
 user_input = st.text_input("Ketik kalimat di sini:", placeholder="Contoh: Rupiah melemah bikin pusing...")
 
 if user_input:
-    # 1. Preprocessing teks input dari pengguna
-    text_ready = clean_text(user_input)
-    text_stemmed = stemmer.stem(user_input)
+    # 1. Ubah teks jadi huruf kecil & bersihkan dari stopwords
+    text_cleaned = clean_text(user_input)
     
-    # 2. Transformasi ke angka dengan CountVectorizer milikmu
-    text_vector = vectorizer.transform([text_ready])
+    # 2. Lakukan Stemming pada teks yang SUDAH BERSIH
+    text_stemmed = stemmer.stem(text_cleaned)
     
-   # 3. Prediksi Sentimen menggunakan model Logistic Regression (lr)
+    # 3. Masukkan VARIABEL text_stemmed (Umpankan kata dasarnya ke vectorizer!)
+    text_vector = vectorizer.transform([text_stemmed])
+    
+    # 4. Prediksi Sentimen menggunakan model Logistic Regression (lr)
     prediksi = lr.predict(text_vector)[0]
     
-    # 4. Hitung Confidence Score (Probabilitas dari Logistic Regression)
-    # HAPUS [0] di ujung predict_proba, ganti menjadi seperti di bawah ini:
+    # 5. Hitung Confidence Score (Probabilitas)
     probabilitas = lr.predict_proba(text_vector)
     confidence_score = max(probabilitas[0]) * 100
     
-    # 5. Tampilkan Hasil Ke User
+    # 6. Tampilkan Hasil Ke User
     st.markdown("---")
     st.subheader("Hasil Analisis:")
     
