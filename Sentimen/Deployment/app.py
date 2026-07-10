@@ -42,7 +42,7 @@ if user_input:
     text_ready = clean_text(user_input)
     
     # 2. Transformasi ke angka dengan CountVectorizer milikmu
-    text_vector = count_vectorizer.transform([text_ready])
+    text_vector = vectorizer.transform([text_ready])
     
    # 3. Prediksi Sentimen menggunakan model Logistic Regression (lr)
     prediksi = model_lr.predict(text_vector)[0]
