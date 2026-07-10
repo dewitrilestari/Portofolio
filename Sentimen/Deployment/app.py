@@ -5,11 +5,11 @@ import streamlit as st
 # ==========================================
 # 1. LOAD MODEL (lr) & VECTORIZER (CountVectorizer)
 # ==========================================
-with open('model_sentimen.pkl', 'rb') as f:
-    model_lr = pickle.load(f)
+with open('Sentimen/Deployment/model_sentimen.pkl', 'rb') as f:
+    model = pickle.load(f)
 
-with open('vectorizer.pkl', 'rb') as f:
-    count_vectorizer = pickle.load(f)
+with open('Sentimen/Deployment/vectorizer.pkl', 'rb') as f:
+    vectorizer = pickle.load(f)
 
 # ==========================================
 # 2. DEFINISIKAN STOPWORDS & PREPROCESSING
