@@ -67,8 +67,9 @@ Sentimen/
 * Menggunakan algoritma linear terbobot untuk memetakan probabilitas teks ke dalam multi-kelas.
 
 * Solusi mengatasi imbalanced data (Positif ~10%, Netral ~48%, Negatif ~42%)
----
-lr = LogisticRegression(class_weight='balanced', random_state=42)
+  ```
+  lr = LogisticRegression(class_weight='balanced', random_state=42)
+  ```
 
 ## 🚀 Cara Menjalankan Lokal
 
