@@ -53,7 +53,7 @@ with st.sidebar:
     st.markdown("""
     | Komponen | Detail Teknis |
     | :--- | :--- |
-    | **Sumber Data** | Komentar YouTube |
+    | **Sumber Data** |[Komentar YouTube](https://www.youtube.com/watch?v=2FPx1_CUzYQ)|
     | **Jumlah Data** | ~9,000 Baris Teks |
     | **Algoritma** | Logistic Regression |
     | **Fitur Ekstraksi**| CountVectorizer |
