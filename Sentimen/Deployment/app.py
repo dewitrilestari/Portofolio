@@ -54,15 +54,11 @@ with st.sidebar:
     | Komponen | Detail Teknis |
     | :--- | :--- |
     | **Sumber Data** | Komentar YouTube |
-    | **Jumlah Data** | ~5,000 Baris Teks |
+    | **Jumlah Data** | ~9,000 Baris Teks |
     | **Algoritma** | Logistic Regression |
     | **Fitur Ekstraksi**| CountVectorizer |
     | **F1-Score Model** | **66.5% (0.665)** |
     """)
-    
-    st.markdown("---")
-    st.markdown("### 🛠️ Alur NLP (Pipeline)")
-    st.caption("Slang Normalization ➔ Stopwords Filtering ➔ Sastrawi Stemming ➔ Vectorization ➔ Klasifikasi")
 
 st.write("Masukkan kalimat pendapat atau komentar untuk memprediksi sentimennya.")
 
@@ -145,9 +141,9 @@ st.markdown("---")
 st.markdown(
     """
     <div style='text-align: center; font-size: 14px; color: #6c757d; line-height: 1.6;'>
-        Developed with ❤️ by <b>Dewi Tri Lestari</b> <br>
-        <a href="https://github.com/dewitrilestari" target="_blank" style="text-decoration: none; color: #0366d6; font-weight: bold;">💻 GitHub</a> | 
-        <a href="GANTI_DENGAN_LINK_LINKEDIN_KAMU" target="_blank" style="text-decoration: none; color: #0a66c2; font-weight: bold;">🌐 LinkedIn</a>
+        Developed by <b>Dewi Tri Lestari</b> <br>
+        <a href="https://github.com/dewitrilestari/Portofolio/edit/main/Sentimen/" target="_blank" style="text-decoration: none; color: #0366d6; font-weight: bold;">💻 GitHub</a> | 
+        <a href="https://www.linkedin.com/in/dewitrilestari/" target="_blank" style="text-decoration: none; color: #0a66c2; font-weight: bold;">🌐 LinkedIn</a>
     </div>
     """, 
     unsafe_allow_html=True
