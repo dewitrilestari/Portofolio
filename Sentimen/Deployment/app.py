@@ -35,6 +35,35 @@ def clean_text(text):
 # 3. INTERFACE STREAMLIT
 # ==========================================
 st.title("📊 Aplikasi Analisis Sentimen Pelemahan Rupiah")
+# ==========================================
+# 1. PENAMBAHAN SIDEBAR (INFORMASI PROYEK)
+# ==========================================
+with st.sidebar:
+    st.markdown("## 📊 Detail Proyek")
+    st.markdown("### 📌 Tentang Aplikasi")
+    st.write(
+        "Aplikasi ini dirancang untuk menganalisis dan mengklasifikasikan "
+        "opini serta sentimen masyarakat mengenai fenomena pelemahan nilai tukar Rupiah."
+    )
+    
+    st.markdown("---")
+    st.markdown("### ⚙️ Spesifikasi Model")
+    
+    # Menampilkan F1-Score sebagai metrik utama yang lebih kredibel untuk imbalanced data
+    st.markdown("""
+    | Komponen | Detail Teknis |
+    | :--- | :--- |
+    | **Sumber Data** | Komentar YouTube |
+    | **Jumlah Data** | ~5,000 Baris Teks |
+    | **Algoritma** | Logistic Regression |
+    | **Fitur Ekstraksi**| CountVectorizer |
+    | **F1-Score Model** | **66.5% (0.665)** |
+    """)
+    
+    st.markdown("---")
+    st.markdown("### 🛠️ Alur NLP (Pipeline)")
+    st.caption("Slang Normalization ➔ Stopwords Filtering ➔ Sastrawi Stemming ➔ Vectorization ➔ Klasifikasi")
+
 st.write("Masukkan kalimat pendapat atau komentar untuk memprediksi sentimennya.")
 
 # Menerima input dari user
@@ -105,3 +134,21 @@ if user_input:
         f"bahwa kalimat di atas termasuk ke dalam kategori sentimen **{prediksi.upper()}** "
         f"berdasarkan pola kata yang telah dipelajari pada data training."
     )
+
+# ==========================================
+# 2. PENAMBAHAN FOOTER (PROFESIONAL BRANDING)
+# ==========================================
+st.markdown("<br><br><br>", unsafe_allow_html=True)
+st.markdown("---")
+
+# Menggunakan HTML + CSS agar posisi footer berada di tengah dan rapi
+st.markdown(
+    """
+    <div style='text-align: center; font-size: 14px; color: #6c757d; line-height: 1.6;'>
+        Developed with ❤️ by <b>Dewi Tri Lestari</b> <br>
+        <a href="https://github.com/dewitrilestari" target="_blank" style="text-decoration: none; color: #0366d6; font-weight: bold;">💻 GitHub</a> | 
+        <a href="GANTI_DENGAN_LINK_LINKEDIN_KAMU" target="_blank" style="text-decoration: none; color: #0a66c2; font-weight: bold;">🌐 LinkedIn</a>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
