@@ -4,8 +4,8 @@ Aplikasi web berbasis kecerdasan buatan (*Deep Learning*) untuk memprediksi akum
 
 * **Live Demo:** https://github.com/dewitrilestari/Portofolio/edit/main/Forecasting/
 * **Sumber Data:** https://dataonline.bmkg.go.id/
-* Stasiun Klimatologi Sleman, DIY
-* 14 Juli 2024 - 13 Juli 2026
+* **Stasiun Klimatologi Sleman, DIY**
+* **14 Juli 2024 - 13 Juli 2026**
 
 ---
 
