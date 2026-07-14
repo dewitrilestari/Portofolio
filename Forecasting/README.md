@@ -2,7 +2,8 @@
 
 Aplikasi web berbasis kecerdasan buatan (*Deep Learning*) untuk memprediksi akumulasi curah hujan harian (RR) masa depan menggunakan model **Long Short-Term Memory (LSTM)** dan metode peramalan rekursif multi-step (*multi-step recursive forecasting*), dibangun dengan **Streamlit**.
 
-🔗 **Live Demo:** [https://github.com/[UsernameKamu]/[NamaRepo]](https://github.com/[UsernameKamu]) *(Silakan ganti dengan tautan Live Demo Streamlit milikmu)*
+🔗 **Live Demo:** https://github.com/dewitrilestari/Portofolio/edit/main/Forecasting/
+**Sumber Data:** https://dataonline.bmkg.go.id/
 
 ---
 
@@ -33,6 +34,7 @@ Forecasting-Curah-Hujan/
 ├── Juli 2024 - Juli 2026.xlsx  # Dataset Historis Parameter Cuaca BMKG
 ├── requirements.txt            # Library Dependencies (TensorFlow, Streamlit, dll)
 └── README.md                   # Dokumentasi Proyek
+```
 
 **## ⚙️ Fitur Dashboard**
 
@@ -63,6 +65,7 @@ features_to_scale = current_row[fitur_kolom]
 features_scaled = scaler.transform(features_to_scale)
 features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
 pred_val = model_lstm.predict(features_3d)
+```
 
 **## 🚀 Cara Menjalankan Lokal**
 ```python
