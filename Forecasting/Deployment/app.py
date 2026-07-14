@@ -4,41 +4,28 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import Dense
 
-# ==============================================================================
-# 1. KONFIGURASI HALAMAN & STYLE
-# ==============================================================================
-st.set_page_config(page_title="Dashboard Forecasting Curah Hujan LSTM", layout="wide")
-
-st.markdown("""
-    <style>
-    .main-title { font-size: 32px; font-weight: bold; color: #1E3A8A; margin-bottom: 5px; }
-    .sub-title { font-size: 16px; color: #4B5563; margin-bottom: 25px; }
-    .metric-box { padding: 15px; background-color: #F3F4F6; border-radius: 8px; text-align: center; box-shadow: 1px 1px 5px rgba(0,0,0,0.05); }
-    .metric-val { font-size: 24px; font-weight: bold; color: #1D4ED8; }
-    .metric-lbl { font-size: 14px; color: #4B5563; }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="main-title">🌧️ Aplikasi Forecasting Curah Hujan (RR) - LSTM</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Platform interaktif untuk memprediksi curah hujan harian dan mengevaluasi performa model Deep Learning LSTM.</div>', unsafe_allow_html=True)
-
-# ==============================================================================
-# 2. MEMUAT DATA HISTORIS & MODEL ASLI (.keras)
-# ==============================================================================
 # Mendapatkan direktori tempat file app.py ini berada
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Membuat class Dense modifikasi untuk mengabaikan parameter 'quantization_config'
+class CustomDense(Dense):
+    def __init__(self, *args, **kwargs):
+        # Hapus quantization_config dari kwargs jika ada sebelum dioper ke Dense asli
+        kwargs.pop('quantization_config', None)
+        super().__init__(*args, **kwargs)
+
 @st.cache_resource
 def load_my_lstm_model():
-    # Menggabungkan folder app.py dengan nama file model .h5 yang baru
-    model_path = os.path.join(BASE_DIR, 'model_lstm.h5')
-    return load_model(model_path)
+    # Menunjuk ke model .keras atau .h5 Anda (gunakan nama file yang Anda miliki di GitHub)
+    model_path = os.path.join(BASE_DIR, 'model_lstm.keras')
+    
+    # Memuat model dengan mendaftarkan CustomDense sebagai pengganti Dense standar
+    return load_model(model_path, custom_objects={'Dense': CustomDense})
 
 @st.cache_data
 def load_historical_data():
-    # Menggabungkan folder app.py dengan nama file dataset CSV Anda
-    # Ganti 'data_curah_hujan.csv' sesuai nama file asli Anda
     data_path = os.path.join(BASE_DIR, 'Juli 2024 - Juli 2026.xlsx')
     df = pd.read_excel(data_path)
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
