@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 
 # ==============================================================================
 # 1. KONFIGURASI HALAMAN & STYLE
@@ -34,7 +34,7 @@ def load_my_lstm_model():
 def load_historical_data():
     # PENTING: Ganti 'data_curah_hujan.csv' dengan nama file dataset asli Anda
     # Dataset ini digunakan untuk mengambil data aktual dan basis tanggal terakhir
-    df = pd.read_csv('data_curah_hujan.csv')
+    df = pd.read_excel('Juli 2024 - Juli 2026.xlsx')
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     return df
 
