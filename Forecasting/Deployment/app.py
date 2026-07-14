@@ -104,35 +104,55 @@ if model_loaded:
     # ==============================================================================
     # 5. PROSES FORECASTING REKURSIF DENGAN SCALER (13 FITUR)
     # ==============================================================================
-    fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
+    # Bersihkan nama kolom dari spasi tidak terlihat (misal 'TN ' menjadi 'TN')
+    df_filtered.columns = df_filtered.columns.str.strip()
+
+    # Daftar 13 kolom fitur yang seharusnya dicari
+    fitur_target = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
                    'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
     
-    # Ambil baris terakhir data mentah (1, 13)
-    last_features_raw = df_filtered[fitur_kolom].iloc[-1].values.astype(np.float32).reshape(1, -1)
-    
-    future_predictions = []
-    
-    for i in range(horizon):
-        # 1. Scaling data input
-        last_input_scaled = scaler.transform(last_features_raw).flatten()
-        current_input_3d = np.reshape(last_input_scaled, (1, 1, len(last_input_scaled)))
+    # FILTER: Ambil hanya kolom yang BENAR-BENAR ada di dalam file Excel Anda
+    fitur_kolom = [col for col in fitur_target if col in df_filtered.columns]
+
+    # Cek jika ada kolom yang kurang/hilang dari Excel Anda
+    kolom_hilang = set(fitur_target) - set(fitur_kolom)
+    if kolom_hilang:
+        st.warning(f"⚠️ Perhatian: Kolom berikut tidak ditemukan di file Excel Anda: {list(kolom_hilang)}. Aplikasi akan mencoba berjalan dengan {len(fitur_kolom)} kolom yang tersedia.")
+
+    if len(fitur_kolom) == 0:
+        st.error("Error Fatal: Tidak ada satupun kolom fitur yang cocok ditemukan di dalam file Excel Anda!")
+    else:
+        # Ambil baris terakhir data mentah/asli sesuai dengan fitur yang ditemukan
+        last_features_raw = df_filtered[fitur_kolom].iloc[-1].values.astype(np.float32).reshape(1, -1)
         
-        # 2. Prediksi (menghasilkan nilai mm asli)
-        pred_val = model_lstm.predict(current_input_3d, verbose=0).flatten()[0]
-        pred_val = max(0.0, float(pred_val))
-        future_predictions.append(pred_val)
-        
-        # 3. Geser window pada data mentah secara autoregressive
-        new_features_raw = np.roll(last_features_raw, -1)
-        new_features_raw[0, -1] = pred_val 
-        
-        last_features_raw = new_features_raw
-        
-    # Index tanggal masa depan
-    last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
-    future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
-    df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
-    
+        # JIKA jumlah kolom pas 13, jalankan forecasting seperti biasa
+        if len(fitur_kolom) == 13:
+            future_predictions = []
+            
+            for i in range(horizon):
+                # 1. Lakukan scaling pada fitur mentah
+                last_input_scaled = scaler.transform(last_features_raw).flatten()
+                current_input_3d = np.reshape(last_input_scaled, (1, 1, len(last_input_scaled)))
+                
+                # 2. Prediksi (menghasilkan nilai mm asli)
+                pred_val = model_lstm.predict(current_input_3d, verbose=0).flatten()[0]
+                pred_val = max(0.0, float(pred_val))
+                future_predictions.append(pred_val)
+                
+                # 3. Geser window pada data mentah secara autoregressive
+                new_features_raw = np.roll(last_features_raw, -1)
+                new_features_raw[0, -1] = pred_val 
+                
+                last_features_raw = new_features_raw
+                
+            # Index tanggal masa depan
+            last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
+            future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
+            df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
+            
+            # (Lanjutkan ke Bagian 6 & 7 di bawah untuk visualisasi grafik dan tabel menggunakan df_forecast)
+        else:
+            st.error(f"Scaler Anda membutuhkan tepat 13 fitur, tetapi di file Excel hanya ditemukan {len(fitur_kolom)} fitur. Harap sesuaikan nama kolom di file Excel Anda agar tepat mengandung kolom: {fitur_target}")    
     # ==============================================================================
     # 6. VISUALISASI GRAFIK
     # ==============================================================================
