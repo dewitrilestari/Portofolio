@@ -1,6 +1,8 @@
-joblib
 streamlit
 pandas
 numpy
 matplotlib
 tensorflow>=2.16.1
+openpyxl
+joblib
+scikit-learn
