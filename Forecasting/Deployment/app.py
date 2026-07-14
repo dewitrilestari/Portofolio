@@ -4,16 +4,25 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import joblib
-from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import Dense
 
 # ====================================================================
-# 1. SOLUSI ERROR DESERIALISASI (QUANTIZATION_CONFIG)
+# 1. MONKEY PATCHING UNTUK LAYER DENSE KERAS (SOLUSI MUTAKHIR)
 # ====================================================================
-class CustomDense(Dense):
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('quantization_config', None)
-        super().__init__(*args, **kwargs)
+# Kita memodifikasi metode deserialisasi Dense secara global sebelum memuat model.
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
+
+original_dense_from_config = Dense.from_config
+
+def patched_dense_from_config(cls, config):
+    # Hapus parameter bermasalah jika ada di dalam konfigurasi JSON model
+    config.pop('quantization_config', None)
+    return original_dense_from_config(config)
+
+# Pasang patch ke class Dense bawaan Keras
+Dense.from_config = classmethod(patched_dense_from_config)
+
+from tensorflow.keras.models import load_model
 
 # Mendapatkan direktori tempat file app.py berada
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,7 +33,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 @st.cache_resource
 def load_my_lstm_model():
     model_path = os.path.join(BASE_DIR, 'model_lstm.keras')
-    return load_model(model_path, custom_objects={'Dense': CustomDense})
+    return load_model(model_path)
 
 @st.cache_resource
 def load_scaler():
@@ -38,7 +47,7 @@ def load_historical_data():
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     return df
 
-# Memanggil fungsi load dengan aman menggunakan blok try-except
+# Memanggil fungsi load secara aman
 try:
     model_lstm = load_my_lstm_model()
     scaler = load_scaler()
@@ -56,7 +65,7 @@ metrics_data = {
     'MAPE': 162.595
 }
 
-# Jika model, data, dan scaler berhasil dimuat
+# Jika semua berhasil dimuat
 if model_loaded:
     # ==============================================================================
     # 3. SIDEBAR / PANEL KONTROL
@@ -95,39 +104,37 @@ if model_loaded:
     # ==============================================================================
     # 5. PROSES FORECASTING REKURSIF DENGAN SCALER (13 FITUR)
     # ==============================================================================
-    # Daftar 13 kolom fitur yang sesuai dengan setup StandardScaler Anda
     fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
                    'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
     
-    # Ambil baris terakhir data fitur mentah/asli (1, 13)
+    # Ambil baris terakhir data mentah (1, 13)
     last_features_raw = df_filtered[fitur_kolom].iloc[-1].values.astype(np.float32).reshape(1, -1)
     
     future_predictions = []
     
     for i in range(horizon):
-        # 1. Lakukan scaling pada fitur mentah sebelum dikirim ke LSTM
+        # 1. Scaling data input
         last_input_scaled = scaler.transform(last_features_raw).flatten()
         current_input_3d = np.reshape(last_input_scaled, (1, 1, len(last_input_scaled)))
         
-        # 2. Prediksi menggunakan LSTM (hasilnya langsung berupa skala asli mm)
+        # 2. Prediksi (menghasilkan nilai mm asli)
         pred_val = model_lstm.predict(current_input_3d, verbose=0).flatten()[0]
-        pred_val = max(0.0, float(pred_val))  # Amankan agar tidak bernilai negatif
+        pred_val = max(0.0, float(pred_val))
         future_predictions.append(pred_val)
         
         # 3. Geser window pada data mentah secara autoregressive
         new_features_raw = np.roll(last_features_raw, -1)
-        # Update fitur terakhir (yang paling baru) dengan nilai prediksi asli
         new_features_raw[0, -1] = pred_val 
         
         last_features_raw = new_features_raw
         
-    # Membuat index tanggal masa depan berdasarkan tanggal terakhir di dataset
+    # Index tanggal masa depan
     last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
     future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
     df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
     
     # ==============================================================================
-    # 6. VISUALISASI GRAFIK (HISTORIS & FORECAST)
+    # 6. VISUALISASI GRAFIK
     # ==============================================================================
     st.subheader("📈 Visualisasi Data Aktual dan Hasil Forecast")
     
@@ -138,7 +145,7 @@ if model_loaded:
     y_actual = df_filtered['RR'].iloc[-30:]
     ax.plot(dates_actual, y_actual, label='Data Aktual (30 Hari Terakhir)', color='black', linewidth=2, marker='o', markersize=3)
     
-    # Plot Data Hasil Forecast Masa Depan
+    # Plot Data Hasil Forecast
     ax.plot(df_forecast['Tanggal'], df_forecast['Prediksi Curah Hujan (mm)'], 
             label=f'Forecast LSTM ({horizon} Hari)', color='red', linestyle='--', marker='o', markersize=5)
             
