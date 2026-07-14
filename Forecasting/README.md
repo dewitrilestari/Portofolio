@@ -36,7 +36,7 @@ Forecasting-Curah-Hujan/
 └── README.md                   # Dokumentasi Proyek
 ```
 
-**## ⚙️ Fitur Dashboard**
+## ⚙️ Fitur Dashboard
 
 | Nama Fitur | Tampilan / Representasi Visual | Keterangan & Detail Teknis |
 | :--- | :--- | :--- |
@@ -48,7 +48,7 @@ Forecasting-Curah-Hujan/
 | **Tabular Forecast Export** | Tabel Data Interaktif | Menampilkan ringkasan hasil angka prediksi numerik yang presisi (dibulatkan hingga 3 desimal) lengkap dengan kolom tanggal proyeksi. |
 | **Professional Branding Footer** | Bagian Terbawah Aplikasi | Menyediakan tautan portofolio profesional berupa ikon tautan langsung menuju profil **GitHub** dan **LinkedIn** pembuat aplikasi. |
 
-**## 📊 Metode yang Digunakan**
+## 📊 Metode yang Digunakan
 
 ### 1. Real-time Feature Engineering & Autoregressive Buffer
 Untuk melakukan prediksi bergulir (*multi-step ahead forecasting*), model membutuhkan nilai historis runtun waktu berupa fitur lag ($t-1$, $t-3$, $t-7$) dari target variabel Curah Hujan (`RR`). Di dalam sistem inferensi Streamlit, dibuat mekanisme *buffer* dinamis yang berjalan secara otomatis:
@@ -67,7 +67,7 @@ features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
 pred_val = model_lstm.predict(features_3d)
 ```
 
-**## 🚀 Cara Menjalankan Lokal**
+## 🚀 Cara Menjalankan Lokal
 ```python
 # Clone repository
 git clone [https://github.com/](https://github.com/)[UsernameKamu]/[NamaRepo].git
