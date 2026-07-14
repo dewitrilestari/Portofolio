@@ -82,10 +82,10 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-**🌐 Deploy**
+## 🌐 Deploy
 Aplikasi ini dideploy menggunakan Streamlit Community Cloud yang terhubung langsung dengan repositori GitHub Anda. Setiap kali ada pembaruan file model (model_lstm.keras), scaler baru, ataupun pembaruan kode visualisasi di GitHub, server akan memperbarui visualisasi dashboard secara otomatis (Continuous Deployment).
 
-**🛠️ Tech Stack**
+## 🛠️ Tech Stack
 * Python (Bahasa Pemrograman Utama)
 * Streamlit (Framework Aplikasi Web/Dashboard)
 * TensorFlow / Keras (Arsitektur Deep Learning LSTM)
@@ -93,12 +93,12 @@ Aplikasi ini dideploy menggunakan Streamlit Community Cloud yang terhubung langs
 * Pandas & NumPy (Manipulasi Data Runtun Waktu)
 * Matplotlib (Visualisasi Grafik Tren Curah Hujan)
 
-**📈 Manfaat Praktis & Bisnis**
+## 📈 Manfaat Praktis & Bisnis
 * Sektor Pertanian: Membantu petani menentukan jadwal tanam dan panen berdasarkan proyeksi curah hujan jangka pendek hingga menengah.
 * Manajemen Sumber Daya Air (Waduk/Bendungan): Memberikan estimasi limpasan air hujan untuk mencegah kegagalan struktur bendungan.
 * Sektor Logistik & Transportasi: Memitigasi risiko hambatan rute pengiriman akibat cuaca buruk ekstrem.
 * Portofolio Terapan: Menjadi bukti kompetensi penanganan data deret waktu menggunakan Deep Learning dan deployment end-to-end yang solid.
 
-⚠️ Catatan Penting
+## ⚠️ Catatan Penting
 * Batasan Model (Error Accumulation): Karena menggunakan metode peramalan rekursif (autoregressive feedback loop), hasil prediksi untuk jangka waktu yang sangat panjang (seperti mendekati hari ke-30) secara alami akan cenderung melandai menuju nilai rata-rata musiman (converge to mean).
 * Ketergantungan Data Cuaca: Keakuratan prediksi masa depan sangat mengandalkan konsistensi input parameter cuaca makro lainnya (seperti suhu dan kelembapan) yang diasumsikan stabil mengikuti tren hari terakhir.
