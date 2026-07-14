@@ -42,9 +42,42 @@ def load_scaler():
 
 @st.cache_data
 def load_historical_data():
+    # Menentukan path ke file Excel Juli 2024 - Juli 2026.xlsx
     data_path = os.path.join(BASE_DIR, 'Juli 2024 - Juli 2026.xlsx')
     df = pd.read_excel(data_path)
+    
+    # 1. Memastikan kolom Tanggal bertipe Datetime
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
+    
+    # 2. Membersihkan nama kolom dari spasi tidak terlihat (whitespace)
+    df.columns = df.columns.str.strip()
+    
+    # 3. Memastikan nilai Curah Hujan (RR) tidak ada yang bernilai negatif
+    if 'RR' in df.columns:
+        df['RR'] = df['RR'].clip(lower=0.0)
+    
+    # ====================================================================
+    # REKAYASA FITUR OTOMATIS (MENGATASI KOLOM YANG TIDAK ADA DI EXCEL)
+    # ====================================================================
+    
+    # A. Ekstrak fitur kalender dari kolom 'Tanggal'
+    if 'bulan' not in df.columns:
+        df['bulan'] = df['Tanggal'].dt.month
+    if 'hari' not in df.columns:
+        df['hari'] = df['Tanggal'].dt.day
+        
+    # B. Membuat fitur Lag secara otomatis dengan menggeser (shifting) kolom 'RR'
+    if 'RR' in df.columns:
+        if 'RR_lag_1' not in df.columns:
+            df['RR_lag_1'] = df['RR'].shift(1)
+        if 'RR_lag_3' not in df.columns:
+            df['RR_lag_3'] = df['RR'].shift(3)
+        if 'RR_lag_7' not in df.columns:
+            df['RR_lag_7'] = df['RR'].shift(7)
+            
+    # C. Hapus baris kosong (NaN) di awal data yang terbentuk akibat proses shifting lag
+    df = df.dropna().reset_index(drop=True)
+    
     return df
 
 # Memanggil fungsi load secara aman
