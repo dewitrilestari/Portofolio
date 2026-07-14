@@ -3,26 +3,33 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import joblib
 from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Dense
 
-# Mendapatkan direktori tempat file app.py ini berada
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Membuat class Dense modifikasi untuk mengabaikan parameter 'quantization_config'
+# ====================================================================
+# 1. SOLUSI ERROR DESERIALISASI (QUANTIZATION_CONFIG)
+# ====================================================================
 class CustomDense(Dense):
     def __init__(self, *args, **kwargs):
-        # Hapus quantization_config dari kwargs jika ada sebelum dioper ke Dense asli
         kwargs.pop('quantization_config', None)
         super().__init__(*args, **kwargs)
 
+# Mendapatkan direktori tempat file app.py berada
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ====================================================================
+# 2. FUNGSI LOAD DATA, MODEL, & SCALER
+# ====================================================================
 @st.cache_resource
 def load_my_lstm_model():
-    # Menunjuk ke model .keras atau .h5 Anda (gunakan nama file yang Anda miliki di GitHub)
     model_path = os.path.join(BASE_DIR, 'model_lstm.keras')
-    
-    # Memuat model dengan mendaftarkan CustomDense sebagai pengganti Dense standar
     return load_model(model_path, custom_objects={'Dense': CustomDense})
+
+@st.cache_resource
+def load_scaler():
+    scaler_path = os.path.join(BASE_DIR, 'scaler.pkl')
+    return joblib.load(scaler_path)
 
 @st.cache_data
 def load_historical_data():
@@ -31,14 +38,15 @@ def load_historical_data():
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     return df
 
-# Memanggil fungsi load
+# Memanggil fungsi load dengan aman menggunakan blok try-except
 try:
     model_lstm = load_my_lstm_model()
+    scaler = load_scaler()
     df_filtered = load_historical_data()
     model_loaded = True
 except Exception as e:
-    st.error(f"Gagal memuat model atau data: {e}")
-    st.info("Pastikan file 'model_lstm.h5' dan dataset csv Anda sudah berada di direktori yang sama.")
+    st.error(f"Gagal memuat model, scaler, atau data: {e}")
+    st.info("Pastikan 'model_lstm.keras', 'scaler.pkl', dan file Excel sudah berada di direktori yang sama dengan 'app.py'.")
     model_loaded = False
 
 # Nilai evaluasi statis dari hasil training sebelumnya
@@ -48,13 +56,13 @@ metrics_data = {
     'MAPE': 162.595
 }
 
+# Jika model, data, dan scaler berhasil dimuat
 if model_loaded:
     # ==============================================================================
     # 3. SIDEBAR / PANEL KONTROL
     # ==============================================================================
     st.sidebar.header("🎛️ Panel Kontrol")
     
-    # Fitur 1: Memilih Horizon Forecasting
     horizon = st.sidebar.selectbox(
         "Pilih Horizon Forecasting (Hari):",
         options=[7, 14, 30],
@@ -66,7 +74,7 @@ if model_loaded:
     **Informasi Model:**
     * **Arsitektur:** LSTM (Deep Learning)
     * **Target Variabel:** Curah Hujan (RR) dalam satuan mm
-    * **Format File:** Native Keras (.keras)
+    * **Format File:** Native Keras (.keras) & Scaler (.pkl)
     """)
     
     # ==============================================================================
@@ -76,39 +84,42 @@ if model_loaded:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown(f'<div class="metric-box"><div class="metric-val">{metrics_data["MAE"]} mm</div><div class="metric-lbl">MAE (Mean Absolute Error)</div></div>', unsafe_allow_html=True)
+        st.metric(label="MAE (Mean Absolute Error)", value=f"{metrics_data['MAE']} mm")
     with col2:
-        st.markdown(f'<div class="metric-box"><div class="metric-val">{metrics_data["RMSE"]} mm</div><div class="metric-lbl">RMSE (Root Mean Squared Error)</div></div>', unsafe_allow_html=True)
+        st.metric(label="RMSE (Root Mean Squared Error)", value=f"{metrics_data['RMSE']} mm")
     with col3:
-        st.markdown(f'<div class="metric-box"><div class="metric-val">{metrics_data["MAPE"]:.3f} %</div><div class="metric-lbl">MAPE (Mean Absolute Percentage Error)</div></div>', unsafe_allow_html=True)
+        st.metric(label="MAPE", value=f"{metrics_data['MAPE']:.3f} %")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
     # ==============================================================================
-    # 5. PROSES FORECASTING REKURSIF (RIIL DARI MODEL LSTM)
+    # 5. PROSES FORECASTING REKURSIF DENGAN SCALER (13 FITUR)
     # ==============================================================================
-    # Menyiapkan fitur terakhir yang berskala (scaled) dari data untuk input awal LSTM
-    # Catatan: Sesuaikan bagian ini jika Anda menyimpan objek scaler secara terpisah
-    # Di sini diasumsikan data fitur terakhir diambil dari baris paling bontot di dataset
+    # Daftar 13 kolom fitur yang sesuai dengan setup StandardScaler Anda
+    fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
+                   'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
     
-    # Contoh ekstraksi array fitur terakhir (sesuaikan jumlah kolom fitur Anda)
-    fitur_kolom = [col for col in df_filtered.columns if col not in ['Tanggal', 'RR']]
-    last_input = df_filtered[fitur_kolom].iloc[-1].values.copy()
+    # Ambil baris terakhir data fitur mentah/asli (1, 13)
+    last_features_raw = df_filtered[fitur_kolom].iloc[-1].values.astype(np.float32).reshape(1, -1)
     
     future_predictions = []
-    current_input_3d = np.reshape(last_input, (1, 1, len(last_input)))
     
     for i in range(horizon):
-        # Prediksi menggunakan model LSTM asli
-        pred_1step = model_lstm.predict(current_input_3d, verbose=0).flatten()[0]
-        pred_1step = max(0, pred_1step)  # Mengamankan agar curah hujan tidak bernilai negatif
-        future_predictions.append(pred_1step)
+        # 1. Lakukan scaling pada fitur mentah sebelum dikirim ke LSTM
+        last_input_scaled = scaler.transform(last_features_raw).flatten()
+        current_input_3d = np.reshape(last_input_scaled, (1, 1, len(last_input_scaled)))
         
-        # Geser window fitur secara autoregressive
-        new_input = np.roll(last_input, -1)
-        new_input[-1] = pred_1step
-        last_input = new_input
-        current_input_3d = np.reshape(last_input, (1, 1, len(last_input)))
+        # 2. Prediksi menggunakan LSTM (hasilnya langsung berupa skala asli mm)
+        pred_val = model_lstm.predict(current_input_3d, verbose=0).flatten()[0]
+        pred_val = max(0.0, float(pred_val))  # Amankan agar tidak bernilai negatif
+        future_predictions.append(pred_val)
+        
+        # 3. Geser window pada data mentah secara autoregressive
+        new_features_raw = np.roll(last_features_raw, -1)
+        # Update fitur terakhir (yang paling baru) dengan nilai prediksi asli
+        new_features_raw[0, -1] = pred_val 
+        
+        last_features_raw = new_features_raw
         
     # Membuat index tanggal masa depan berdasarkan tanggal terakhir di dataset
     last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
@@ -122,7 +133,7 @@ if model_loaded:
     
     fig, ax = plt.subplots(figsize=(12, 5))
     
-    # Plot Data Historis Aktual (30 Hari Terakhir agar kontras)
+    # Plot Data Historis Aktual (30 Hari Terakhir)
     dates_actual = df_filtered['Tanggal'].iloc[-30:]
     y_actual = df_filtered['RR'].iloc[-30:]
     ax.plot(dates_actual, y_actual, label='Data Aktual (30 Hari Terakhir)', color='black', linewidth=2, marker='o', markersize=3)
