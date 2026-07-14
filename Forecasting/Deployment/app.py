@@ -32,7 +32,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 @st.cache_resource
 def load_my_lstm_model():
     # Menggabungkan folder app.py dengan nama file model
-    model_path = os.path.join(BASE_DIR, 'model_lstm.keras')
+    model_path = os.path.join(BASE_DIR, 'model_lstm.h5')
     return load_model(model_path)
 
 @st.cache_data
@@ -51,7 +51,7 @@ try:
     model_loaded = True
 except Exception as e:
     st.error(f"Gagal memuat model atau data: {e}")
-    st.info("Pastikan file 'model_lstm.keras' dan dataset csv Anda sudah berada di direktori yang sama.")
+    st.info("Pastikan file 'model_lstm.h5' dan dataset csv Anda sudah berada di direktori yang sama.")
     model_loaded = False
 
 # Nilai evaluasi statis dari hasil training sebelumnya
