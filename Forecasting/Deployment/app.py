@@ -42,24 +42,22 @@ def load_historical_data():
     data_path = os.path.join(BASE_DIR, 'Juli 2024 - Juli 2026.xlsx')
     df = pd.read_excel(data_path)
     
-    # 1. Pastikan kolom Tanggal bertipe Datetime
+    # Pastikan kolom Tanggal bertipe Datetime
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     
-    # 2. Bersihkan nama kolom dari spasi tidak terlihat
+    # Bersihkan nama kolom dari spasi tidak terlihat
     df.columns = df.columns.str.strip()
     
-    # 3. Pastikan nilai Curah Hujan (RR) tidak negatif
+    # Pastikan nilai Curah Hujan (RR) tidak ada yang bernilai negatif
     if 'RR' in df.columns:
         df['RR'] = df['RR'].clip(lower=0.0)
     
     # --- REKAYASA FITUR OTOMATIS (MENGATASI KOLOM YANG HILANG DI EXCEL) ---
-    # A. Ekstrak fitur kalender
     if 'bulan' not in df.columns:
         df['bulan'] = df['Tanggal'].dt.month
     if 'hari' not in df.columns:
         df['hari'] = df['Tanggal'].dt.day
         
-    # B. Membuat fitur Lag otomatis dari kolom target 'RR'
     if 'RR' in df.columns:
         if 'RR_lag_1' not in df.columns:
             df['RR_lag_1'] = df['RR'].shift(1)
@@ -68,9 +66,8 @@ def load_historical_data():
         if 'RR_lag_7' not in df.columns:
             df['RR_lag_7'] = df['RR'].shift(7)
             
-    # C. Hapus baris kosong (NaN) akibat proses pergeseran lag (.shift)
+    # Hapus baris kosong akibat pergeseran lag
     df = df.dropna().reset_index(drop=True)
-    
     return df
 
 # Memanggil fungsi load secara aman
@@ -80,11 +77,10 @@ try:
     df_filtered = load_historical_data()
     model_loaded = True
 except Exception as e:
-    st.error(f"Gagal memuat model, scaler, atau data: {e}")
-    st.info("Pastikan 'model_lstm.keras', 'scaler.pkl', dan file Excel sudah berada di direktori yang sama dengan 'app.py'.")
+    st.error(f"Gagal memuat komponen: {e}")
     model_loaded = False
 
-# Nilai evaluasi statis dari hasil training Google Colab
+# Nilai evaluasi statis dari hasil training
 metrics_data = {
     'MAE': 6.627,
     'RMSE': 12.857,
@@ -94,26 +90,40 @@ metrics_data = {
 # Jika semua komponen berhasil dimuat
 if model_loaded:
     # ==============================================================================
-    # 3. SIDEBAR / PANEL KONTROL
+    # REVISI 1: PENAMBAHAN INFORMASI APLIKASI DI SIDEBAR (PRIORITAS TINGGI)
     # ==============================================================================
-    st.sidebar.header("🎛️ Panel Kontrol")
+    st.sidebar.header("ℹ️ Tentang Aplikasi")
+    st.sidebar.info("""
+    **Tujuan Aplikasi:**
+    Dashboard ini dirancang untuk memprediksi (*forecasting*) akumulasi curah hujan harian (RR) secara otomatis sebagai sistem pendukung keputusan mitigasi bencana hidrometeorologi.
+    """)
     
+    st.sidebar.header("⚙️ Detail Teknis")
+    st.sidebar.markdown(f"""
+    * **Sumber Data:** Dataset Cuaca Historis BMKG (Periode Juli 2024 - Juli 2026)
+    * **Ukuran Data:** ~730 data rekaman harian (setelah pembersihan)
+    * **Model Prediksi:** Long Short-Term Memory (LSTM) Deep Learning
+    * **Ekstraksi Fitur:** Parameter Makro Cuaca + Fitur Autoregresif Lag (H-1, H-3, H-7)
+    * **Akurasi Model (MAE):** **{metrics_data['MAE']} mm**
+    """)
+    
+    st.sidebar.markdown("---")
+    
+    st.sidebar.header("🎛️ Panel Kontrol")
     horizon = st.sidebar.selectbox(
         "Pilih Horizon Forecasting (Hari):",
         options=[7, 14, 30],
         index=0
     )
     
-    st.sidebar.markdown("---")
-    st.sidebar.info("""
-    **Informasi Model:**
-    * **Arsitektur:** LSTM (Deep Learning)
-    * **Target Variabel:** Curah Hujan (RR) dalam satuan mm
-    * **Format File:** Native Keras (.keras) & Scaler (.pkl)
-    """)
+    # ==============================================================================
+    # Halaman Utama Dashboard
+    # ==============================================================================
+    st.title("🌧️ Dashboard Forecasting Curah Hujan BMKG (LSTM)")
+    st.markdown("Aplikasi berbasis kecerdasan buatan untuk meramal intensitas curah hujan berdasarkan pola runtun waktu (*time-series*).")
     
     # ==============================================================================
-    # 4. GRID METRIK EVALUASI MODEL
+    # GRID METRIK EVALUASI MODEL
     # ==============================================================================
     st.subheader("📊 Metrik Evaluasi Model (Data Uji)")
     col1, col2, col3 = st.columns(3)
@@ -128,63 +138,53 @@ if model_loaded:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # ==============================================================================
-    # 5. PROSES FORECASTING REKURSIF DENGAN SCALER (13 FITUR) - FIXED LOGIC
+    # PROSES FORECASTING REKURSIF (FIXED LOGIC)
     # ==============================================================================
-    # Daftar 13 kolom fitur wajib yang dibutuhkan oleh StandardScaler
     fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
                    'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
     
-    # Validasi apakah ke-13 kolom kini sudah lengkap di dataframe setelah rekayasa fitur
     fitur_tersedia = [col for col in fitur_kolom if col in df_filtered.columns]
     
     if len(fitur_tersedia) == 13:
-        # Ambil baris terakhir data mentah sebagai DataFrame agar nama kolomnya terjaga
         last_row = df_filtered[fitur_kolom].iloc[-1:].copy()
         
         future_predictions = []
         current_row = last_row.copy()
         
-        # Dapatkan tanggal awal mulai prediksi (1 hari setelah tanggal terakhir di dataset)
         last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
         current_date = last_date
         
-        # Ambil riwayat curah hujan aktual terakhir untuk mengisi lag secara presisi
         prediction_history = list(df_filtered['RR'].iloc[-10:].values) 
         
         for i in range(horizon):
-            # Maju 1 hari
             current_date = current_date + pd.Timedelta(days=1)
             
-            # A. Susun fitur-fitur lag secara presisi berdasarkan riwayat di buffer
-            current_row['RR_lag_1'] = prediction_history[-1]  # H-1
-            current_row['RR_lag_3'] = prediction_history[-3]  # H-3
-            current_row['RR_lag_7'] = prediction_history[-7]  # H-7
+            # Susun fitur-fitur lag secara presisi berdasarkan riwayat aktual/prediksi
+            current_row['RR_lag_1'] = prediction_history[-1]  
+            current_row['RR_lag_3'] = prediction_history[-3]  
+            current_row['RR_lag_7'] = prediction_history[-7]  
             
-            # B. Update fitur penanda waktu sesuai tanggal simulasi berjalan
+            # Update fitur kalender
             current_row['bulan'] = current_date.month
             current_row['hari'] = current_date.day
             
-            # C. Ambil array fitur sesuai urutan wajib StandardScaler (Kirimkan sebagai DataFrame)
+            # Scaling & Reshape ke format 3D untuk LSTM
             features_to_scale = current_row[fitur_kolom]
-            
-            # D. Scaling & Reshape ke format 3D untuk LSTM
             features_scaled = scaler.transform(features_to_scale)
             features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
             
-            # E. Prediksi
+            # Prediksi nilai curah hujan asli
             pred_val = model_lstm.predict(features_3d, verbose=0).flatten()[0]
-            pred_val = max(0.0, float(pred_val))  # Amankan dari nilai negatif
+            pred_val = max(0.0, float(pred_val))  
             
-            # Simpan hasil prediksi
             future_predictions.append(pred_val)
-            prediction_history.append(pred_val) # Masukkan ke buffer untuk lag berikutnya
+            prediction_history.append(pred_val) 
             
-        # Membuat indeks tanggal masa depan berdasarkan tanggal terakhir di dataset
         future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
         df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
         
         # ==============================================================================
-        # 6. VISUALISASI GRAFIK (FIXED SCALE & NO LATEX ERROR)
+        # VISUALISASI GRAFIK
         # ==============================================================================
         st.subheader("📈 Visualisasi Data Aktual dan Hasil Forecast")
         
@@ -208,7 +208,7 @@ if model_loaded:
         st.pyplot(fig)
         
         # ==============================================================================
-        # 7. MENAMPILKAN NILAI PREDIKSI DALAM TABEL
+        # MENAMPILKAN NILAI PREDIKSI DALAM TABEL
         # ==============================================================================
         st.subheader(f"📋 Tabel Nilai Hasil Prediksi ({horizon} Hari ke Depan)")
         
@@ -221,6 +221,22 @@ if model_loaded:
             st.dataframe(df_table, use_container_width=True, hide_index=True)
             
     else:
-        # Jika rekayasa fitur gagal melengkapi ke-13 kolom
-        st.error(f"Gagal melakukan rekayasa fitur otomatis. Scaler membutuhkan tepat 13 fitur, tetapi sistem hanya berhasil mendeteksi/membuat {len(fitur_tersedia)} fitur.")
-        st.info(f"Kolom yang terdeteksi saat ini: {fitur_tersedia}")
+        st.error(f"Gagal memproses data. Scaler membutuhkan 13 fitur, hanya tersedia {len(fitur_tersedia)}.")
+
+    # ==============================================================================
+    # REVISI 2: PROFESIONALISME & KONTAK (FOOTER APLIKASI)
+    # ==============================================================================
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align: center; color: #666666; font-size: 14px; padding: 10px;">
+            <p style="margin-bottom: 5px;"><strong>Created by [Nama Kamu]</strong></p>
+            <p style="margin-top: 0px;">
+                <a href="https://github.com/[UsernameKamu]" target="_blank" style="color: #1f77b4; text-decoration: none; margin-right: 20px; font-weight: bold;">🐙 GitHub Portfolio</a>
+                <a href="https://linkedin.com/in/[UsernameKamu]" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">👔 LinkedIn Profile</a>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
