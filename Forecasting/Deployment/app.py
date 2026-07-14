@@ -108,7 +108,6 @@ if model_loaded:
         * **Ukuran Data:** ~730 data rekaman harian
         * **Model Prediksi:** Long Short-Term Memory (LSTM) Deep Learning
         * **Ekstraksi Fitur:** Parameter Makro Cuaca + Fitur Autoregresif Lag (H-1, H-3, H-7)
-        * **Akurasi Model (MAE):** **{metrics_data['MAE']} mm**
         """)
         
         st.markdown("---")
@@ -121,6 +120,7 @@ if model_loaded:
             index=0,
             key="horizon_selector"
         )
+        st.markdown("<br>" * 10, unsafe_allow_html=True)
     
     # ==============================================================================
     # Halaman Utama Dashboard
@@ -240,10 +240,10 @@ if model_loaded:
         st.markdown(
             """
             <div style="text-align: center; color: #666666; font-size: 14px; padding-bottom: 20px;">
-                <p style="margin-bottom: 5px;"><strong>Created by [Nama Kamu]</strong></p>
+                <p style="margin-bottom: 5px;"><strong>Created by Dewi Tri Lestari</strong></p>
                 <p style="margin-top: 0px;">
-                    <a href="https://github.com/[UsernameKamu]" target="_blank" style="color: #1f77b4; text-decoration: none; margin-right: 20px; font-weight: bold;">🐙 GitHub Portfolio</a>
-                    <a href="https://linkedin.com/in/[UsernameKamu]" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">👔 LinkedIn Profile</a>
+                    <a href="https://github.com/dewitrilestari/Portofolio/Forecasting" target="_blank" style="color: #1f77b4; text-decoration: none; margin-right: 20px; font-weight: bold;">🐙 GitHub Portfolio</a>
+                    <a href="https://linkedin.com/in/dewitrilestari" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">👔 LinkedIn Profile</a>
                 </p>
             </div>
             """,
