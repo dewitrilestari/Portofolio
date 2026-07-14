@@ -31,7 +31,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @st.cache_resource
 def load_my_lstm_model():
-    # Menggabungkan folder app.py dengan nama file model
+    # Menggabungkan folder app.py dengan nama file model .h5 yang baru
     model_path = os.path.join(BASE_DIR, 'model_lstm.h5')
     return load_model(model_path)
 
