@@ -3,7 +3,7 @@
 Aplikasi web berbasis kecerdasan buatan (*Deep Learning*) untuk memprediksi akumulasi curah hujan harian (RR) masa depan menggunakan model **Long Short-Term Memory (LSTM)** dan metode peramalan rekursif multi-step (*multi-step recursive forecasting*), dibangun dengan **Streamlit**.
 
 * **Live Demo:** https://github.com/dewitrilestari/Portofolio/edit/main/Forecasting/
-* **Sumber Data:** https://dataonline.bmkg.go.id/
+* **Sumber Data:** https://dataonline.bmkg.go.id/ (Stasiun Klimatologi Sleman, DIY)
 
 ---
 
