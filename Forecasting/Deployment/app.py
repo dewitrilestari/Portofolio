@@ -39,8 +39,8 @@ def load_my_lstm_model():
 def load_historical_data():
     # Menggabungkan folder app.py dengan nama file dataset CSV Anda
     # Ganti 'data_curah_hujan.csv' sesuai nama file asli Anda
-    data_path = os.path.join(BASE_DIR, 'data_curah_hujan.csv')
-    df = pd.read_csv(data_path)
+    data_path = os.path.join(BASE_DIR, 'Juli 2024 - Juli 2026.xlsx')
+    df = pd.read_excel(data_path)
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     return df
 
