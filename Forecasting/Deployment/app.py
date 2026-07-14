@@ -6,20 +6,17 @@ import matplotlib.pyplot as plt
 import joblib
 
 # ====================================================================
-# 1. MONKEY PATCHING UNTUK LAYER DENSE KERAS (SOLUSI MUTAKHIR)
+# 1. MONKEY PATCHING UNTUK LAYER DENSE KERAS (Mencegah error kuantisasi)
 # ====================================================================
-# Kita memodifikasi metode deserialisasi Dense secara global sebelum memuat model.
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
 original_dense_from_config = Dense.from_config
 
 def patched_dense_from_config(cls, config):
-    # Hapus parameter bermasalah jika ada di dalam konfigurasi JSON model
     config.pop('quantization_config', None)
     return original_dense_from_config(config)
 
-# Pasang patch ke class Dense bawaan Keras
 Dense.from_config = classmethod(patched_dense_from_config)
 
 from tensorflow.keras.models import load_model
@@ -42,31 +39,27 @@ def load_scaler():
 
 @st.cache_data
 def load_historical_data():
-    # Menentukan path ke file Excel Juli 2024 - Juli 2026.xlsx
     data_path = os.path.join(BASE_DIR, 'Juli 2024 - Juli 2026.xlsx')
     df = pd.read_excel(data_path)
     
-    # 1. Memastikan kolom Tanggal bertipe Datetime
+    # 1. Pastikan kolom Tanggal bertipe Datetime
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     
-    # 2. Membersihkan nama kolom dari spasi tidak terlihat (whitespace)
+    # 2. Bersihkan nama kolom dari spasi tidak terlihat
     df.columns = df.columns.str.strip()
     
-    # 3. Memastikan nilai Curah Hujan (RR) tidak ada yang bernilai negatif
+    # 3. Pastikan nilai Curah Hujan (RR) tidak negatif
     if 'RR' in df.columns:
         df['RR'] = df['RR'].clip(lower=0.0)
     
-    # ====================================================================
-    # REKAYASA FITUR OTOMATIS (MENGATASI KOLOM YANG TIDAK ADA DI EXCEL)
-    # ====================================================================
-    
-    # A. Ekstrak fitur kalender dari kolom 'Tanggal'
+    # --- REKAYASA FITUR OTOMATIS (MENGATASI KOLOM YANG HILANG DI EXCEL) ---
+    # A. Ekstrak fitur kalender
     if 'bulan' not in df.columns:
         df['bulan'] = df['Tanggal'].dt.month
     if 'hari' not in df.columns:
         df['hari'] = df['Tanggal'].dt.day
         
-    # B. Membuat fitur Lag secara otomatis dengan menggeser (shifting) kolom 'RR'
+    # B. Membuat fitur Lag otomatis dari kolom target 'RR'
     if 'RR' in df.columns:
         if 'RR_lag_1' not in df.columns:
             df['RR_lag_1'] = df['RR'].shift(1)
@@ -75,7 +68,7 @@ def load_historical_data():
         if 'RR_lag_7' not in df.columns:
             df['RR_lag_7'] = df['RR'].shift(7)
             
-    # C. Hapus baris kosong (NaN) di awal data yang terbentuk akibat proses shifting lag
+    # C. Hapus baris kosong (NaN) akibat proses pergeseran lag (.shift)
     df = df.dropna().reset_index(drop=True)
     
     return df
@@ -91,14 +84,14 @@ except Exception as e:
     st.info("Pastikan 'model_lstm.keras', 'scaler.pkl', dan file Excel sudah berada di direktori yang sama dengan 'app.py'.")
     model_loaded = False
 
-# Nilai evaluasi statis dari hasil training sebelumnya
+# Nilai evaluasi statis dari hasil training Google Colab
 metrics_data = {
     'MAE': 6.627,
     'RMSE': 12.857,
     'MAPE': 162.595
 }
 
-# Jika semua berhasil dimuat
+# Jika semua komponen berhasil dimuat
 if model_loaded:
     # ==============================================================================
     # 3. SIDEBAR / PANEL KONTROL
@@ -135,90 +128,99 @@ if model_loaded:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # ==============================================================================
-    # 5. PROSES FORECASTING REKURSIF DENGAN SCALER (13 FITUR)
+    # 5. PROSES FORECASTING REKURSIF DENGAN SCALER (13 FITUR) - FIXED LOGIC
     # ==============================================================================
-    # Bersihkan nama kolom dari spasi tidak terlihat (misal 'TN ' menjadi 'TN')
-    df_filtered.columns = df_filtered.columns.str.strip()
-
-    # Daftar 13 kolom fitur yang seharusnya dicari
-    fitur_target = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
+    # Daftar 13 kolom fitur wajib yang dibutuhkan oleh StandardScaler
+    fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
                    'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
     
-    # FILTER: Ambil hanya kolom yang BENAR-BENAR ada di dalam file Excel Anda
-    fitur_kolom = [col for col in fitur_target if col in df_filtered.columns]
-
-    # Cek jika ada kolom yang kurang/hilang dari Excel Anda
-    kolom_hilang = set(fitur_target) - set(fitur_kolom)
-    if kolom_hilang:
-        st.warning(f"⚠️ Perhatian: Kolom berikut tidak ditemukan di file Excel Anda: {list(kolom_hilang)}. Aplikasi akan mencoba berjalan dengan {len(fitur_kolom)} kolom yang tersedia.")
-
-    if len(fitur_kolom) == 0:
-        st.error("Error Fatal: Tidak ada satupun kolom fitur yang cocok ditemukan di dalam file Excel Anda!")
-    else:
-        # Ambil baris terakhir data mentah/asli sesuai dengan fitur yang ditemukan
-        last_features_raw = df_filtered[fitur_kolom].iloc[-1].values.astype(np.float32).reshape(1, -1)
+    # Validasi apakah ke-13 kolom kini sudah lengkap di dataframe setelah rekayasa fitur
+    fitur_tersedia = [col for col in fitur_kolom if col in df_filtered.columns]
+    
+    if len(fitur_tersedia) == 13:
+        # Ambil baris terakhir data mentah sebagai DataFrame agar nama kolomnya terjaga
+        last_row = df_filtered[fitur_kolom].iloc[-1:].copy()
         
-        # JIKA jumlah kolom pas 13, jalankan forecasting seperti biasa
-        if len(fitur_kolom) == 13:
-            future_predictions = []
+        future_predictions = []
+        current_row = last_row.copy()
+        
+        # Dapatkan tanggal awal mulai prediksi (1 hari setelah tanggal terakhir di dataset)
+        last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
+        current_date = last_date
+        
+        # Ambil riwayat curah hujan aktual terakhir untuk mengisi lag secara presisi
+        prediction_history = list(df_filtered['RR'].iloc[-10:].values) 
+        
+        for i in range(horizon):
+            # Maju 1 hari
+            current_date = current_date + pd.Timedelta(days=1)
             
-            for i in range(horizon):
-                # 1. Lakukan scaling pada fitur mentah
-                last_input_scaled = scaler.transform(last_features_raw).flatten()
-                current_input_3d = np.reshape(last_input_scaled, (1, 1, len(last_input_scaled)))
-                
-                # 2. Prediksi (menghasilkan nilai mm asli)
-                pred_val = model_lstm.predict(current_input_3d, verbose=0).flatten()[0]
-                pred_val = max(0.0, float(pred_val))
-                future_predictions.append(pred_val)
-                
-                # 3. Geser window pada data mentah secara autoregressive
-                new_features_raw = np.roll(last_features_raw, -1)
-                new_features_raw[0, -1] = pred_val 
-                
-                last_features_raw = new_features_raw
-                
-            # Index tanggal masa depan
-            last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
-            future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
-            df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
+            # A. Susun fitur-fitur lag secara presisi berdasarkan riwayat di buffer
+            current_row['RR_lag_1'] = prediction_history[-1]  # H-1
+            current_row['RR_lag_3'] = prediction_history[-3]  # H-3
+            current_row['RR_lag_7'] = prediction_history[-7]  # H-7
             
-            # (Lanjutkan ke Bagian 6 & 7 di bawah untuk visualisasi grafik dan tabel menggunakan df_forecast)
-        else:
-            st.error(f"Scaler Anda membutuhkan tepat 13 fitur, tetapi di file Excel hanya ditemukan {len(fitur_kolom)} fitur. Harap sesuaikan nama kolom di file Excel Anda agar tepat mengandung kolom: {fitur_target}")    
-    # ==============================================================================
-    # 6. VISUALISASI GRAFIK
-    # ==============================================================================
-    st.subheader("📈 Visualisasi Data Aktual dan Hasil Forecast")
-    
-    fig, ax = plt.subplots(figsize=(12, 5))
-    
-    # Plot Data Historis Aktual (30 Hari Terakhir)
-    dates_actual = df_filtered['Tanggal'].iloc[-30:]
-    y_actual = df_filtered['RR'].iloc[-30:]
-    ax.plot(dates_actual, y_actual, label='Data Aktual (30 Hari Terakhir)', color='black', linewidth=2, marker='o', markersize=3)
-    
-    # Plot Data Hasil Forecast
-    ax.plot(df_forecast['Tanggal'], df_forecast['Prediksi Curah Hujan (mm)'], 
-            label=f'Forecast LSTM ({horizon} Hari)', color='red', linestyle='--', marker='o', markersize=5)
+            # B. Update fitur penanda waktu sesuai tanggal simulasi berjalan
+            current_row['bulan'] = current_date.month
+            current_row['hari'] = current_date.day
             
-    ax.set_xlabel("Tanggal")
-    ax.set_ylabel("Curah Hujan (mm)")
-    ax.legend(loc="upper left")
-    ax.grid(True, linestyle='--', alpha=0.5)
-    fig.autofmt_xdate()
-    
-    st.pyplot(fig)
-    
-    # ==============================================================================
-    # 7. MENAMPILKAN NILAI PREDIKSI DALAM TABEL
-    # ==============================================================================
-    st.subheader(f"📋 Tabel Nilai Hasil Prediksi ({horizon} Hari ke Depan)")
-    
-    df_table = df_forecast.copy()
-    df_table['Tanggal'] = df_table['Tanggal'].dt.strftime('%Y-%m-%d')
-    df_table['Prediksi Curah Hujan (mm)'] = df_table['Prediksi Curah Hujan (mm)'].round(3)
-    
-    col_table, col_empty = st.columns([0.6, 0.4])
-    with col_table:
-        st.dataframe(df_table, use_container_width=True, hide_index=True)
+            # C. Ambil array fitur sesuai urutan wajib StandardScaler (Kirimkan sebagai DataFrame)
+            features_to_scale = current_row[fitur_kolom]
+            
+            # D. Scaling & Reshape ke format 3D untuk LSTM
+            features_scaled = scaler.transform(features_to_scale)
+            features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
+            
+            # E. Prediksi
+            pred_val = model_lstm.predict(features_3d, verbose=0).flatten()[0]
+            pred_val = max(0.0, float(pred_val))  # Amankan dari nilai negatif
+            
+            # Simpan hasil prediksi
+            future_predictions.append(pred_val)
+            prediction_history.append(pred_val) # Masukkan ke buffer untuk lag berikutnya
+            
+        # Membuat indeks tanggal masa depan berdasarkan tanggal terakhir di dataset
+        future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
+        df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
+        
+        # ==============================================================================
+        # 6. VISUALISASI GRAFIK (FIXED SCALE & NO LATEX ERROR)
+        # ==============================================================================
+        st.subheader("📈 Visualisasi Data Aktual dan Hasil Forecast")
+        
+        fig, ax = plt.subplots(figsize=(12, 5))
+        
+        # Plot Data Historis Aktual (30 Hari Terakhir)
+        dates_actual = df_filtered['Tanggal'].iloc[-30:]
+        y_actual = df_filtered['RR'].iloc[-30:]
+        ax.plot(dates_actual, y_actual, label='Data Aktual (30 Hari Terakhir)', color='black', linewidth=2, marker='o', markersize=3)
+        
+        # Plot Data Hasil Forecast
+        ax.plot(df_forecast['Tanggal'], df_forecast['Prediksi Curah Hujan (mm)'], 
+                label=f'Forecast LSTM ({horizon} Hari)', color='red', linestyle='--', marker='o', markersize=5)
+                
+        ax.set_xlabel("Tanggal")
+        ax.set_ylabel("Curah Hujan (mm)")
+        ax.legend(loc="upper left")
+        ax.grid(True, linestyle='--', alpha=0.5)
+        fig.autofmt_xdate()
+        
+        st.pyplot(fig)
+        
+        # ==============================================================================
+        # 7. MENAMPILKAN NILAI PREDIKSI DALAM TABEL
+        # ==============================================================================
+        st.subheader(f"📋 Tabel Nilai Hasil Prediksi ({horizon} Hari ke Depan)")
+        
+        df_table = df_forecast.copy()
+        df_table['Tanggal'] = df_table['Tanggal'].dt.strftime('%Y-%m-%d')
+        df_table['Prediksi Curah Hujan (mm)'] = df_table['Prediksi Curah Hujan (mm)'].round(3)
+        
+        col_table, col_empty = st.columns([0.6, 0.4])
+        with col_table:
+            st.dataframe(df_table, use_container_width=True, hide_index=True)
+            
+    else:
+        # Jika rekayasa fitur gagal melengkapi ke-13 kolom
+        st.error(f"Gagal melakukan rekayasa fitur otomatis. Scaler membutuhkan tepat 13 fitur, tetapi sistem hanya berhasil mendeteksi/membuat {len(fitur_tersedia)} fitur.")
+        st.info(f"Kolom yang terdeteksi saat ini: {fitur_tersedia}")
