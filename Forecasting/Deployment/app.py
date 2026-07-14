@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import joblib
 
+# Set Page Config di awal untuk mematikan potensi konflik layout
+st.set_page_config(page_title="Forecasting Curah Hujan BMKG", layout="wide")
+
 # ====================================================================
 # 1. MONKEY PATCHING UNTUK LAYER DENSE KERAS (Mencegah error kuantisasi)
 # ====================================================================
@@ -92,28 +95,32 @@ if model_loaded:
     # ==============================================================================
     # REVISI 1: PENAMBAHAN INFORMASI APLIKASI DI SIDEBAR (PRIORITAS TINGGI)
     # ==============================================================================
-    st.sidebar.header("ℹ️ Tentang Aplikasi")
-    st.sidebar.info("""
-    **Tujuan Aplikasi:**
-    Dashboard ini dirancang untuk memprediksi (*forecasting*) akumulasi curah hujan harian (RR) secara otomatis sebagai sistem pendukung keputusan mitigasi bencana hidrometeorologi.
-    """)
-    
-    st.sidebar.header("⚙️ Detail Teknis")
-    st.sidebar.markdown(f"""
-    * **Sumber Data:** Dataset Cuaca Historis BMKG (Periode Juli 2024 - Juli 2026) Stasiun Klimatologi Sleman, DIY
-    * **Ukuran Data:** ~730 data rekaman harian (setelah pembersihan)
-    * **Model Prediksi:** Long Short-Term Memory (LSTM) Deep Learning
-    * **Ekstraksi Fitur:** Parameter Makro Cuaca + Fitur Autoregresif Lag (H-1, H-3, H-7)
-    """)
-    
-    st.sidebar.markdown("---")
-    
-    st.sidebar.header("🎛️ Panel Kontrol")
-    horizon = st.sidebar.selectbox(
-        "Pilih Horizon Forecasting (Hari):",
-        options=[7, 14, 30],
-        index=0
-    )
+    with st.sidebar:
+        st.header("ℹ️ Tentang Aplikasi")
+        st.info("""
+        **Tujuan Aplikasi:**
+        Dashboard ini dirancang untuk memprediksi (*forecasting*) akumulasi curah hujan harian (RR) secara otomatis sebagai sistem pendukung keputusan mitigasi bencana hidrometeorologi.
+        """)
+        
+        st.header("⚙️ Detail Teknis")
+        st.markdown(f"""
+        * **Sumber Data:** Dataset Cuaca BMKG Sleman, DIY (Juli 2024 - Juli 2026)
+        * **Ukuran Data:** ~730 data rekaman harian
+        * **Model Prediksi:** Long Short-Term Memory (LSTM) Deep Learning
+        * **Ekstraksi Fitur:** Parameter Makro Cuaca + Fitur Autoregresif Lag (H-1, H-3, H-7)
+        * **Akurasi Model (MAE):** **{metrics_data['MAE']} mm**
+        """)
+        
+        st.markdown("---")
+        
+        st.header("🎛️ Panel Kontrol")
+        # Meletakkan selectbox di dalam scope container sidebar yang bersih
+        horizon = st.selectbox(
+            "Pilih Horizon Forecasting (Hari):",
+            options=[7, 14, 30],
+            index=0,
+            key="horizon_selector"
+        )
     
     # ==============================================================================
     # Halaman Utama Dashboard
@@ -223,19 +230,22 @@ if model_loaded:
         st.error(f"Gagal memproses data. Scaler membutuhkan 13 fitur, hanya tersedia {len(fitur_tersedia)}.")
 
     # ==============================================================================
-    # REVISI 2: PROFESIONALISME & KONTAK (FOOTER APLIKASI)
+    # REVISI 2: PROFESIONALISME & KONTAK (FOOTER APLIKASI AMAN YANG DIBATASI ST.CONTAINER)
     # ==============================================================================
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown(
-        """
-        <div style="text-align: center; color: #666666; font-size: 14px; padding: 10px;">
-            <p style="margin-bottom: 5px;"><strong>Created by Dewi Tri Lestari</strong></p>
-            <p style="margin-top: 0px;">
-                <a href="https://github.com/dewitrilestari/Portofolio/edit/main/Forecasting" target="_blank" style="color: #1f77b4; text-decoration: none; margin-right: 20px; font-weight: bold;">🐙 GitHub Portfolio</a>
-                <a href="https://www.linkedin.com/in/dewitrilestari/" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">👔 LinkedIn Profile</a>
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    
+    footer_container = st.container()
+    with footer_container:
+        st.markdown(
+            """
+            <div style="text-align: center; color: #666666; font-size: 14px; padding-bottom: 20px;">
+                <p style="margin-bottom: 5px;"><strong>Created by [Nama Kamu]</strong></p>
+                <p style="margin-top: 0px;">
+                    <a href="https://github.com/[UsernameKamu]" target="_blank" style="color: #1f77b4; text-decoration: none; margin-right: 20px; font-weight: bold;">🐙 GitHub Portfolio</a>
+                    <a href="https://linkedin.com/in/[UsernameKamu]" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">👔 LinkedIn Profile</a>
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
