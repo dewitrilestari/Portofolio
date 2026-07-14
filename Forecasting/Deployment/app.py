@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -25,16 +26,21 @@ st.markdown('<div class="sub-title">Platform interaktif untuk memprediksi curah 
 # ==============================================================================
 # 2. MEMUAT DATA HISTORIS & MODEL ASLI (.keras)
 # ==============================================================================
+# Mendapatkan direktori tempat file app.py ini berada
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @st.cache_resource
 def load_my_lstm_model():
-    # Memuat model format native Keras terbaru
-    return load_model('model_lstm.keras')
+    # Menggabungkan folder app.py dengan nama file model
+    model_path = os.path.join(BASE_DIR, 'model_lstm.keras')
+    return load_model(model_path)
 
 @st.cache_data
 def load_historical_data():
-    # PENTING: Ganti 'data_curah_hujan.csv' dengan nama file dataset asli Anda
-    # Dataset ini digunakan untuk mengambil data aktual dan basis tanggal terakhir
-    df = pd.read_excel('Juli 2024 - Juli 2026.xlsx')
+    # Menggabungkan folder app.py dengan nama file dataset CSV Anda
+    # Ganti 'data_curah_hujan.csv' sesuai nama file asli Anda
+    data_path = os.path.join(BASE_DIR, 'data_curah_hujan.csv')
+    df = pd.read_csv(data_path)
     df['Tanggal'] = pd.to_datetime(df['Tanggal'])
     return df
 
