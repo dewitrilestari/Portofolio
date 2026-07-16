@@ -7,8 +7,8 @@ import streamlit as st
 current_dir = os.path.dirname(os.path.abspath(__file__))
 cv_file_path = os.path.join(current_dir, "CV.pdf")
 
-# Deteksi Foto Profil
-photo_extensions = ["png", "jpg", "jpeg", "PNG", "JPG", "JPEG"]
+# Deteksi Foto Profil (Mendukung jpg, png, jpeg, dll.)
+photo_extensions = ["jpg", "png", "jpeg", "PNG", "JPG", "JPEG"]
 photo_path = None
 
 for ext in photo_extensions:
@@ -17,8 +17,9 @@ for ext in photo_extensions:
         photo_path = temp_path
         break
 
+# Jika tidak terdeteksi otomatis, default ke format jpg sesuai file yang kamu miliki
 if not photo_path:
-    photo_path = os.path.join(current_dir, "foto_profil.png")
+    photo_path = os.path.join(current_dir, "foto_profil.jpg")
 
 # ==============================================================================
 # 2. PAGE CONFIGURATION
@@ -30,7 +31,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS untuk mempercantik tampilan utama & merapatkan sidebar agar tidak scrollable
+# Custom CSS untuk mempercantik tampilan utama & mengatur kerapatan sidebar yang ideal
 st.markdown("""
     <style>
     /* Styling halaman utama */
@@ -47,23 +48,20 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
 
-    /* === REVISI: CSS KHUSUS SIDEBAR AGAR RENGKET & BEBAS SCROLL === */
+    /* === REVISI: FORMULA CSS SIDEBAR IDEAL (BERI SPACE & SELESAI TANPA SCROLL) === */
     section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
-        padding-top: 1.5rem !important; /* Kurangi jarak kosong paling atas */
-        padding-bottom: 1rem !important;
+        padding-top: 2.2rem !important; /* Jarak atas sidebar yang pas */
+        padding-bottom: 1.5rem !important;
     }
     section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0.4rem !important; /* Merapatkan gap antar blok komponen */
+        gap: 0.85rem !important; /* Ruang bernapas antar elemen utama (tidak terlalu rapat) */
     }
     section[data-testid="stSidebar"] hr {
-        margin-top: 0.4rem !important; /* Menipiskan margin garis horizontal */
-        margin-bottom: 0.4rem !important;
+        margin-top: 0.8rem !important; /* Jarak garis pembatas yang ideal */
+        margin-bottom: 0.8rem !important;
     }
     section[data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 0px !important; /* Merapatkan jarak pilihan bulat navigasi */
-    }
-    section[data-testid="stSidebar"] .stElementContainer {
-        margin-bottom: -4px !important; /* Menghilangkan margin bawah default */
+        gap: 6px !important; /* Jarak antar pilihan navigasi bulat agar terlihat rapi */
     }
     </style>
 """, unsafe_allow_html=True)
@@ -77,7 +75,7 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # REVISI: Menggabungkan Quick Links ke dalam satu blok Markdown rapat agar tidak memakan ruang tinggi
+    # Quick Links dalam satu blok Markdown dengan spasi baris standar yang rapi
     st.markdown("""
     ### Quick Links
     🔗 [LinkedIn](https://www.linkedin.com/in/dewitrilestari/)  
@@ -169,7 +167,7 @@ elif page == "Experience & Education":
     
     with tab1:
         st.markdown("#### Data Analyst and Data Scientist Intern")
-        st.caption("📆 **April 2026 - June 2026** | *BLKPP DIY (Balai Latihan Kerja dan Pengembangan Produktivitas)*")
+        st.caption("📆 **April 2026 - June 2026** | *BLKPP DIY (Balai Latihan Kerja dan Pengembangan Productivity)*")
         st.markdown("""
         * Leveraged **SQL** and **Python** algorithms to drive extraction, comprehensive cleaning pipelines, and optimization structural layers over **600,000+ operational rows**.
         * Architected **4 high-fidelity interactive Business Intelligence dashboards** via Power BI and MetaBase to track operational KPIs.
