@@ -78,7 +78,7 @@ if page == "Home & About":
         c1, c2, c3 = st.columns(3)
         c1.metric(label="UGM Cumulative GPA", value="3.75 / 4.00")
         c2.metric(label="Max Dataset Rows Handled", value="600,000+")
-        with col3:
+        with c3:
             st.markdown(
                 """
                 <div style="display: flex; flex-direction: column;">
