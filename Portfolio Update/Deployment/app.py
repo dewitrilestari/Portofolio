@@ -39,11 +39,20 @@ with st.sidebar:
     st.markdown("📞 [WhatsApp](https://wa.me/6285643468310)")
     
     st.markdown("---")
-    # CV Download Button Configuration
-    # Note: Replace b"Your CV PDF Binary Data Here" with actual file reading: open("CV.pdf", "rb")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    cv_file_path = os.path.join(current_dir, "CV.pdf")
+
+    # Safely read and serve the PDF
+    try:
+        with open(cv_file_path, "rb") as f:
+            pdf_data = f.read()
+    except FileNotFoundError:
+        pdf_data = b"CV file not found on server."
+
+    # In your sidebar or wherever you place the button:
     st.download_button(
         label="📄 Download Full CV",
-        data=b"Simulated PDF Data Content. Replace this with your actual local file reading stream.",
+        data=pdf_data,
         file_name="Dewi_Tri_Lestari_CV.pdf",
         mime="application/pdf"
     )
