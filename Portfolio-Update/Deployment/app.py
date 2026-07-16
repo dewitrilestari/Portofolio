@@ -2,11 +2,11 @@ import os
 import streamlit as st
 
 # ==============================================================================
-# 1. PATH CONFIGURATION (Didefinisikan secara global agar rapi)
+# 1. PATH CONFIGURATION
 # ==============================================================================
 current_dir = os.path.dirname(os.path.abspath(__file__))
 cv_file_path = os.path.join(current_dir, "CV.pdf")
-photo_path = os.path.join(current_dir, "foto_profil.jpg")  # Path foto profilmu
+photo_path = os.path.join(current_dir, "foto_profil.png")  # Sudah menggunakan .png
 
 # ==============================================================================
 # 2. PAGE CONFIGURATION
@@ -40,7 +40,7 @@ st.markdown("""
 # 3. SIDEBAR NAVIGATION, PHOTO, & CONTACT QUICK LINKS
 # ==============================================================================
 with st.sidebar:
-    # MENAMPILKAN FOTO PROFIL (Otomatis muncul jika file foto_profil.jpg ada di GitHub)
+    # Menampilkan Foto Profil jika file foto_profil.png ada di GitHub
     if os.path.exists(photo_path):
         st.image(photo_path, use_container_width=True)
     
@@ -94,7 +94,7 @@ if page == "Home & About":
         c1.metric(label="UGM Cumulative GPA", value="3.75 / 4.00")
         c2.metric(label="Max Dataset Rows Handled", value="600,000+")
         
-        # Menampilkan tabel Languages kustom agar tidak terpotong
+        # Menggunakan c3 yang benar (tidak col3 lagi) agar tidak error
         with c3:
             st.markdown(
                 """
