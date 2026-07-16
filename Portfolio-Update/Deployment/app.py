@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 
 # 1. PAGE CONFIGURATION
