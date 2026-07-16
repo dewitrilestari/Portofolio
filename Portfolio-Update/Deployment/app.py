@@ -1,7 +1,16 @@
 import os
 import streamlit as st
 
-# 1. PAGE CONFIGURATION
+# ==============================================================================
+# 1. PATH CONFIGURATION (Didefinisikan secara global agar rapi)
+# ==============================================================================
+current_dir = os.path.dirname(os.path.abspath(__file__))
+cv_file_path = os.path.join(current_dir, "CV.pdf")
+photo_path = os.path.join(current_dir, "foto_profil.jpg")  # Path foto profilmu
+
+# ==============================================================================
+# 2. PAGE CONFIGURATION
+# ==============================================================================
 st.set_page_config(
     page_title="Dewi Tri Lestari | Data Portfolio",
     page_icon="📊",
@@ -9,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for styling tweaks
+# Custom CSS untuk mempercantik tampilan portofolio
 st.markdown("""
     <style>
     .main .block-container { padding-top: 2rem; }
@@ -27,8 +36,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. SIDEBAR NAVIGATION & CONTACT QUICK LINKS
+# ==============================================================================
+# 3. SIDEBAR NAVIGATION, PHOTO, & CONTACT QUICK LINKS
+# ==============================================================================
 with st.sidebar:
+    # MENAMPILKAN FOTO PROFIL (Otomatis muncul jika file foto_profil.jpg ada di GitHub)
+    if os.path.exists(photo_path):
+        st.image(photo_path, use_container_width=True)
+    
     st.markdown("## Navigation")
     page = st.radio("Go to", ["Home & About", "Experience & Education", "Projects Gallery", "Contact Me"])
     
@@ -40,17 +55,15 @@ with st.sidebar:
     st.markdown("📞 [WhatsApp](https://wa.me/6285643468310)")
     
     st.markdown("---")
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    cv_file_path = os.path.join(current_dir, "CV.pdf")
-
-    # Safely read and serve the PDF
+    
+    # Membaca CV PDF dengan aman
     try:
         with open(cv_file_path, "rb") as f:
             pdf_data = f.read()
     except FileNotFoundError:
         pdf_data = b"CV file not found on server."
 
-    # In your sidebar or wherever you place the button:
+    # Tombol Download CV
     st.download_button(
         label="📄 Download Full CV",
         data=pdf_data,
@@ -58,7 +71,9 @@ with st.sidebar:
         mime="application/pdf"
     )
 
-# 3. PAGE CONTENT CONTEXT
+# ==============================================================================
+# 4. PAGE CONTENT CONTEXT
+# ==============================================================================
 
 # --- PAGE: HOME & ABOUT ---
 if page == "Home & About":
@@ -78,6 +93,8 @@ if page == "Home & About":
         c1, c2, c3 = st.columns(3)
         c1.metric(label="UGM Cumulative GPA", value="3.75 / 4.00")
         c2.metric(label="Max Dataset Rows Handled", value="600,000+")
+        
+        # Menampilkan tabel Languages kustom agar tidak terpotong
         with c3:
             st.markdown(
                 """
@@ -92,7 +109,7 @@ if page == "Home & About":
             )
 
     with col2:
-        # Informative box highlighting core technological capabilities
+        # Box informasi keahlian teknis
         st.info("""
         **🚀 Technical Skillsets:**
         * **Languages:** Python, SQL
@@ -157,13 +174,11 @@ elif page == "Projects Gallery":
     st.title("Interactive Work Portfolio")
     st.markdown("Filter through current machine learning models, engineering pipelines, and analytical tools.")
     
-    # Dynamic Category Selector Filter
     category_filter = st.selectbox(
         "Choose Category Focus:", 
         ["All Projects", "Data Science & Machine Learning", "Data Analysis & Time Series"]
     )
     
-    # Storage structure containing the specific project metrics
     projects = [
         {
             "title": "Membangun Sistem Rekomendasi: Dari Teori Association Rules hingga Implementasi Aplikasi Streamlit",
@@ -188,13 +203,11 @@ elif page == "Projects Gallery":
         }
     ]
     
-    # Filtering Logic Execution
     filtered_projects = [
         p for p in projects 
         if category_filter == "All Projects" or p["category"] == category_filter
     ]
     
-    # Layout rendering dynamically based on rows
     if filtered_projects:
         for idx, proj in enumerate(filtered_projects):
             with st.container():
@@ -202,7 +215,6 @@ elif page == "Projects Gallery":
                 st.caption(f"📁 **Category:** {proj['category']}")
                 st.write(proj['desc'])
                 
-                # Render technical stack pills
                 stack_badges = "".join([f'<span class="badge">{tech}</span>' for tech in proj['stack']])
                 st.markdown(stack_badges, unsafe_allow_html=True)
                 
