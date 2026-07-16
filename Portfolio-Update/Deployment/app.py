@@ -2,12 +2,12 @@ import os
 import streamlit as st
 
 # ==============================================================================
-# 1. PATH CONFIGURATION (Deteksi Cerdas untuk Format Foto)
+# 1. PATH CONFIGURATION (Deteksi Cerdas untuk Format Foto & Capture Proyek)
 # ==============================================================================
 current_dir = os.path.dirname(os.path.abspath(__file__))
 cv_file_path = os.path.join(current_dir, "CV.pdf")
 
-# Mencari file foto_profil dengan berbagai ekstensi secara otomatis
+# Deteksi Foto Profil
 photo_extensions = ["png", "jpg", "jpeg", "PNG", "JPG", "JPEG"]
 photo_path = None
 
@@ -17,7 +17,6 @@ for ext in photo_extensions:
         photo_path = temp_path
         break
 
-# Jika belum ada file fisik yang terdeteksi, default ke foto_profil.png
 if not photo_path:
     photo_path = os.path.join(current_dir, "foto_profil.png")
 
@@ -92,7 +91,7 @@ if page == "Home & About":
         st.title("Dewi Tri Lestari")
         st.subheader("Data Analyst & Data Science Enthusiast")
         
-        # TEKS DI BAWAH INI SEKARANG MENGGUNAKAN HTML AGAR BISA RATA KANAN-KIRI (JUSTIFY)
+        # Teks Perkenalan Diri dengan format rata kanan-kiri (justify)
         st.markdown("""
         <p style="text-align: justify; line-height: 1.6;">
         A recent <strong>Geophysics graduate from Gadjah Mada University</strong> with a passion for 
@@ -198,27 +197,34 @@ elif page == "Projects Gallery":
         ["All Projects", "Data Science & Machine Learning", "Data Analysis & Time Series"]
     )
     
+    # DAFTAR PROYEK: Ditambahkan field 'image_filename' untuk nama file gambar capture masing-masing proyek
     projects = [
         {
             "title": "Membangun Sistem Rekomendasi: Dari Teori Association Rules hingga Implementasi Aplikasi Streamlit",
             "category": "Data Science & Machine Learning",
             "desc": "Built an interactive e-commerce product engine applying complex rule sets. Deployed out to end-users via clean modular web application environments.",
             "stack": ["Python", "Streamlit", "ML Pipelines"],
-            "link": "https://github.com/dewitrilestari/Portofolio"
+            "link github": "https://github.com/dewitrilestari/Portofolio/Product-Recommendation",
+            "link deployment": "https://dewi-portofolio-rekomendasi-prdk.streamlit.app/",
+            "image_filename": "capture_rekomendasi.png"  # Taruh file capture_rekomendasi.png di folder project-mu
         },
         {
             "title": "Analyzing Public Sentiment on the Indonesian Rupiah",
             "category": "Data Science & Machine Learning",
             "desc": "Extracted and text-mined social data landscapes reflecting economic updates of IDR. Modeled target classification structures using NLP libraries.",
             "stack": ["Python", "NLP", "SQL Data Streams"],
-            "link": "https://github.com/dewitrilestari/Portofolio"
+            "link github": "https://github.com/dewitrilestari/Portofolio/Sentimen",
+            "link deployment": "https://dewi-portofolio-sentimen-analysis.streamlit.app/",
+            "image_filename": "capture_sentimen.png"  # Taruh file capture_sentimen.png di folder project-mu
         },
         {
             "title": "Dashboard Forecasting Curah Hujan Harian BMKG (LSTM)",
             "category": "Data Analysis & Time Series",
             "desc": "Constructed an experimental recurrent time-series network (LSTM) predicting continuous daily precipitation shifts, mapping outcomes directly to dynamic analytics visualizers.",
             "stack": ["Deep Learning (LSTM)", "Power BI", "Python"],
-            "link": "https://github.com/dewitrilestari/Portofolio"
+            "link github": "https://github.com/dewitrilestari/Portofolio/tree/main/Forecasting",
+            "link deployment": "https://dewi-portofolio-forecasting-bmkg.streamlit.app/",
+            "image_filename": "capture_forecasting.png"  # Taruh file capture_forecasting.png di folder project-mu
         }
     ]
     
@@ -230,14 +236,31 @@ elif page == "Projects Gallery":
     if filtered_projects:
         for idx, proj in enumerate(filtered_projects):
             with st.container():
-                st.markdown(f"### {proj['title']}")
-                st.caption(f"📁 **Category:** {proj['category']}")
-                st.write(proj['desc'])
+                # Menggunakan 2 Kolom: Kolom detail (kiri) dan Kolom screenshot (kanan)
+                col_info, col_screenshot = st.columns([3, 2], gap="large")
                 
-                stack_badges = "".join([f'<span class="badge">{tech}</span>' for tech in proj['stack']])
-                st.markdown(stack_badges, unsafe_allow_html=True)
+                with col_info:
+                    st.markdown(f"### {proj['title']}")
+                    st.caption(f"📁 **Category:** {proj['category']}")
+                    st.write(proj['desc'])
+                    
+                    stack_badges = "".join([f'<span class="badge">{tech}</span>' for tech in proj['stack']])
+                    st.markdown(stack_badges, unsafe_allow_html=True)
+                    
+                    st.markdown(
+                        f"🔗 [View GitHub Repository]({proj['link github']}) &nbsp;&nbsp;|&nbsp;&nbsp; "
+                        f"🚀 [View Live Deployment]({proj['link deployment']})"
+                    )
                 
-                st.markdown(f"🔗 [View Project Repository]({proj['link']})")
+                with col_screenshot:
+                    image_path = os.path.join(current_dir, proj["image_filename"])
+                    # Cek apakah file gambar capture-nya ada di folder
+                    if os.path.exists(image_path):
+                        st.image(image_path, use_container_width=True, caption=f"Screenshot of {proj['title']}")
+                    else:
+                        # Placeholder jika file gambarnya belum diunggah ke repository
+                        st.info(f"📸 **Visual Preview Placeholder**\n\nUntuk menampilkan screenshot web ini, harap unggah file gambar screenshot-mu ke repository GitHub dengan nama file: `{proj['image_filename']}`")
+                
                 st.markdown("---")
     else:
         st.info("No matching projects found in this specific category selection.")
