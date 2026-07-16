@@ -1,3 +1,4 @@
+import os  # Tambahan: Untuk mengelola path/jalur file secara aman
 import streamlit as st
 import pandas as pd
 import joblib
@@ -10,11 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
+# Deteksi otomatis direktori tempat app.py berada
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # 1. LOAD FILE INPUT MENGGUNAKAN JOBLIB
 @st.cache_resource
 def load_model_data():
-    product_corr = joblib.load('product_corr.joblib')
-    df_master_cf = joblib.load('df_master_cf.joblib')
+    # Gabungkan path folder app.py dengan nama file .joblib secara aman
+    product_corr_path = os.path.join(BASE_DIR, 'product_corr.joblib')
+    df_master_cf_path = os.path.join(BASE_DIR, 'df_master_cf.joblib')
+    
+    product_corr = joblib.load(product_corr_path)
+    df_master_cf = joblib.load(df_master_cf_path)
     return product_corr, df_master_cf
 
 try:
