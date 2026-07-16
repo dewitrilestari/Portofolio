@@ -6,7 +6,9 @@ import streamlit as st
 # ==============================================================================
 current_dir = os.path.dirname(os.path.abspath(__file__))
 cv_file_path = os.path.join(current_dir, "CV.pdf")
-photo_path = os.path.join(current_dir, "foto_profil.png")  # Sudah menggunakan .png
+# Kita asumsikan filenya adalah PNG sesuai percakapan sebelumnya.
+# Jika kamu mengupload JPG, ganti ekstensinya di sini.
+photo_path = os.path.join(current_dir, "foto_profil.png") 
 
 # ==============================================================================
 # 2. PAGE CONFIGURATION
@@ -37,12 +39,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 3. SIDEBAR NAVIGATION, PHOTO, & CONTACT QUICK LINKS
+# 3. SIDEBAR NAVIGATION & CONTACT QUICK LINKS
 # ==============================================================================
 with st.sidebar:
-    # Menampilkan Foto Profil jika file foto_profil.png ada di GitHub
-    if os.path.exists(photo_path):
-        st.image(photo_path, use_container_width=True)
+    # --- FOTO TELAH DIHAPUS DARI SINI ---
     
     st.markdown("## Navigation")
     page = st.radio("Go to", ["Home & About", "Experience & Education", "Projects Gallery", "Contact Me"])
@@ -94,7 +94,7 @@ if page == "Home & About":
         c1.metric(label="UGM Cumulative GPA", value="3.75 / 4.00")
         c2.metric(label="Max Dataset Rows Handled", value="600,000+")
         
-        # Menggunakan c3 yang benar (tidak col3 lagi) agar tidak error
+        # Menggunakan c3 yang benar agar tidak error
         with c3:
             st.markdown(
                 """
@@ -109,6 +109,11 @@ if page == "Home & About":
             )
 
     with col2:
+        # --- FOTO SEKARANG DITAMPILKAN DI SINI ---
+        # Menampilkan Foto Profil jika file foto_profil.png ada di GitHub
+        if os.path.exists(photo_path):
+            st.image(photo_path, use_container_width=True)
+            
         # Box informasi keahlian teknis
         st.info("""
         **🚀 Technical Skillsets:**
