@@ -113,7 +113,7 @@ st.markdown("---")
 st.markdown(
     """
     <div style="text-align: center; color: #6d6d6d; font-size: 14px; font-family: sans-serif; line-height: 1.6;">
-        Created with ❤️ by <b>Dewi Tri Lestari</b> <br>
+        Created by <b>Dewi Tri Lestari</b> <br>
         <a href="https://github.com/dewitrilestari/Portofolio" target="_blank" style="color: #ff4b4b; text-decoration: none; margin-right: 15px; font-weight: bold;">
             🐙 GitHub
         </a>
