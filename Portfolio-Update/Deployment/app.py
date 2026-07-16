@@ -30,9 +30,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS untuk mempercantik tampilan portofolio
+# Custom CSS untuk mempercantik tampilan utama & merapatkan sidebar agar tidak scrollable
 st.markdown("""
     <style>
+    /* Styling halaman utama */
     .main .block-container { padding-top: 2rem; }
     .badge {
         display: inline-block;
@@ -45,6 +46,25 @@ st.markdown("""
         margin-right: 0.5rem;
         margin-bottom: 0.5rem;
     }
+
+    /* === REVISI: CSS KHUSUS SIDEBAR AGAR RENGKET & BEBAS SCROLL === */
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+        padding-top: 1.5rem !important; /* Kurangi jarak kosong paling atas */
+        padding-bottom: 1rem !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.4rem !important; /* Merapatkan gap antar blok komponen */
+    }
+    section[data-testid="stSidebar"] hr {
+        margin-top: 0.4rem !important; /* Menipiskan margin garis horizontal */
+        margin-bottom: 0.4rem !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 0px !important; /* Merapatkan jarak pilihan bulat navigasi */
+    }
+    section[data-testid="stSidebar"] .stElementContainer {
+        margin-bottom: -4px !important; /* Menghilangkan margin bawah default */
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -56,11 +76,15 @@ with st.sidebar:
     page = st.radio("Go to", ["Home & About", "Experience & Education", "Projects Gallery", "Contact Me"])
     
     st.markdown("---")
-    st.markdown("### Quick Links")
-    st.markdown("🔗 [LinkedIn](https://www.linkedin.com/in/dewitrilestari/)")
-    st.markdown("💻 [GitHub Portfolio](https://github.com/dewitrilestari/Portofolio)")
-    st.markdown("✉️ [Email](mailto:dewitrilestari135@gmail.com)")
-    st.markdown("📞 [WhatsApp](https://wa.me/6285643468310)")
+    
+    # REVISI: Menggabungkan Quick Links ke dalam satu blok Markdown rapat agar tidak memakan ruang tinggi
+    st.markdown("""
+    ### Quick Links
+    🔗 [LinkedIn](https://www.linkedin.com/in/dewitrilestari/)  
+    💻 [GitHub Portfolio](https://github.com/dewitrilestari/Portofolio)  
+    ✉️ [Email](mailto:dewitrilestari135@gmail.com)  
+    📞 [WhatsApp](https://wa.me/6285643468310)
+    """)
     
     st.markdown("---")
     
@@ -206,7 +230,7 @@ elif page == "Projects Gallery":
             "stack": ["Python", "Streamlit", "ML Pipelines"],
             "link github": "https://github.com/dewitrilestari/Portofolio/Product-Recommendation",
             "link deployment": "https://dewi-portofolio-rekomendasi-prdk.streamlit.app/",
-            "image_filename": "capture_rekomendasi.png"  # Taruh file capture_rekomendasi.png di folder project-mu
+            "image_filename": "capture_rekomendasi.png"
         },
         {
             "title": "Analyzing Public Sentiment on the Indonesian Rupiah",
@@ -215,7 +239,7 @@ elif page == "Projects Gallery":
             "stack": ["Python", "NLP", "SQL Data Streams"],
             "link github": "https://github.com/dewitrilestari/Portofolio/Sentimen",
             "link deployment": "https://dewi-portofolio-sentimen-analysis.streamlit.app/",
-            "image_filename": "capture_sentimen.png"  # Taruh file capture_sentimen.png di folder project-mu
+            "image_filename": "capture_sentimen.png"
         },
         {
             "title": "Dashboard Forecasting Curah Hujan Harian BMKG (LSTM)",
@@ -224,7 +248,7 @@ elif page == "Projects Gallery":
             "stack": ["Deep Learning (LSTM)", "Power BI", "Python"],
             "link github": "https://github.com/dewitrilestari/Portofolio/tree/main/Forecasting",
             "link deployment": "https://dewi-portofolio-forecasting-bmkg.streamlit.app/",
-            "image_filename": "capture_forecasting.png"  # Taruh file capture_forecasting.png di folder project-mu
+            "image_filename": "capture_forecasting.png"
         }
     ]
     
@@ -236,7 +260,6 @@ elif page == "Projects Gallery":
     if filtered_projects:
         for idx, proj in enumerate(filtered_projects):
             with st.container():
-                # Menggunakan 2 Kolom: Kolom detail (kiri) dan Kolom screenshot (kanan)
                 col_info, col_screenshot = st.columns([3, 2], gap="large")
                 
                 with col_info:
@@ -254,12 +277,10 @@ elif page == "Projects Gallery":
                 
                 with col_screenshot:
                     image_path = os.path.join(current_dir, proj["image_filename"])
-                    # Cek apakah file gambar capture-nya ada di folder
                     if os.path.exists(image_path):
                         st.image(image_path, use_container_width=True, caption=f"Screenshot of {proj['title']}")
                     else:
-                        # Placeholder jika file gambarnya belum diunggah ke repository
-                        st.info(f"📸 **Visual Preview Placeholder**\n\nUntuk menampilkan screenshot web ini, harap unggah file gambar screenshot-mu ke repository GitHub dengan nama file: `{proj['image_filename']}`")
+                        st.info(f"📸 **Visual Preview Placeholder**\n\nHarap unggah screenshot-mu ke GitHub dengan nama file: `{proj['image_filename']}`")
                 
                 st.markdown("---")
     else:
