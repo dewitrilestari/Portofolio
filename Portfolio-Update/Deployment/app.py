@@ -2,13 +2,24 @@ import os
 import streamlit as st
 
 # ==============================================================================
-# 1. PATH CONFIGURATION
+# 1. PATH CONFIGURATION (Deteksi Cerdas untuk Format Foto)
 # ==============================================================================
 current_dir = os.path.dirname(os.path.abspath(__file__))
 cv_file_path = os.path.join(current_dir, "CV.pdf")
-# Kita asumsikan filenya adalah PNG sesuai percakapan sebelumnya.
-# Jika kamu mengupload JPG, ganti ekstensinya di sini.
-photo_path = os.path.join(current_dir, "foto_profil.png") 
+
+# Mencari file foto_profil dengan berbagai ekstensi secara otomatis
+photo_extensions = ["png", "jpg", "jpeg", "PNG", "JPG", "JPEG"]
+photo_path = None
+
+for ext in photo_extensions:
+    temp_path = os.path.join(current_dir, f"foto_profil.{ext}")
+    if os.path.exists(temp_path):
+        photo_path = temp_path
+        break
+
+# Jika belum ada file fisik yang terdeteksi, default ke foto_profil.png
+if not photo_path:
+    photo_path = os.path.join(current_dir, "foto_profil.png")
 
 # ==============================================================================
 # 2. PAGE CONFIGURATION
@@ -42,8 +53,6 @@ st.markdown("""
 # 3. SIDEBAR NAVIGATION & CONTACT QUICK LINKS
 # ==============================================================================
 with st.sidebar:
-    # --- FOTO TELAH DIHAPUS DARI SINI ---
-    
     st.markdown("## Navigation")
     page = st.radio("Go to", ["Home & About", "Experience & Education", "Projects Gallery", "Contact Me"])
     
@@ -83,18 +92,24 @@ if page == "Home & About":
         st.title("Dewi Tri Lestari")
         st.subheader("Data Analyst & Data Science Enthusiast")
         
+        # TEKS DI BAWAH INI SEKARANG MENGGUNAKAN HTML AGAR BISA RATA KANAN-KIRI (JUSTIFY)
         st.markdown("""
-        A recent **Geophysics graduate from Gadjah Mada University** with a passion for pursuing a professional track in business management, analytical systems, and scalable operations. Highly adaptive and disciplined with proven capabilities directing cross-functional teams and operational timelines.
-        
-        I specialize in turning unstructured telemetry and data records into clear, actionable business strategies using Python, SQL frameworks, and intuitive Business Intelligence layouts.
-        """)
+        <p style="text-align: justify; line-height: 1.6;">
+        A recent <strong>Geophysics graduate from Gadjah Mada University</strong> with a passion for 
+        pursuing a professional track in business management, analytical systems, and scalable operations. 
+        Highly adaptive and disciplined with proven capabilities directing cross-functional teams and operational timelines.
+        </p>
+        <p style="text-align: justify; line-height: 1.6;">
+        I specialize in turning unstructured telemetry and data records into clear, actionable business 
+        strategies using Python, SQL frameworks, and intuitive Business Intelligence layouts.
+        </p>
+        """, unsafe_allow_html=True)
         
         st.markdown("### Core Focus Areas")
         c1, c2, c3 = st.columns(3)
         c1.metric(label="UGM Cumulative GPA", value="3.75 / 4.00")
         c2.metric(label="Max Dataset Rows Handled", value="600,000+")
         
-        # Menggunakan c3 yang benar agar tidak error
         with c3:
             st.markdown(
                 """
@@ -109,9 +124,8 @@ if page == "Home & About":
             )
 
     with col2:
-        # --- FOTO SEKARANG DITAMPILKAN DI SINI ---
-        # Menampilkan Foto Profil jika file foto_profil.png ada di GitHub
-        if os.path.exists(photo_path):
+        # Menampilkan Foto Profil jika file foto ditemukan
+        if photo_path and os.path.exists(photo_path):
             st.image(photo_path, use_container_width=True)
             
         # Box informasi keahlian teknis
