@@ -78,7 +78,18 @@ if page == "Home & About":
         c1, c2, c3 = st.columns(3)
         c1.metric(label="UGM Cumulative GPA", value="3.75 / 4.00")
         c2.metric(label="Max Dataset Rows Handled", value="600,000+")
-        c3.metric(label="Languages", value="ID (Native), EN")
+        with col3:
+        st.markdown(
+            """
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.8rem; color: rgb(104, 110, 124);">Languages</span>
+                <span style="font-size: 1.6rem; font-weight: 600; color: rgb(49, 51, 63); line-height: 1.25; white-space: normal; word-wrap: break-word;">
+                    ID (Native)<br>EN (Conv)
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     with col2:
         # Informative box highlighting core technological capabilities
