@@ -1,4 +1,4 @@
-import os  # Tambahan: Untuk mengelola path/jalur file secara aman
+import os  # Untuk mengelola path/jalur file secara aman
 import streamlit as st
 import pandas as pd
 import joblib
@@ -106,3 +106,21 @@ if st.button("🚀 Generate Rekomendasi", type="primary"):
             )
         else:
             st.warning("Tidak ada rekomendasi yang cocok ditemukan untuk produk tersebut.")
+
+# --- BAGIAN 4: FOOTER PERSONAL ---
+st.markdown("<br><br><br>", unsafe_allow_html=True)  # Memberikan jarak ke bawah
+st.markdown("---")
+st.markdown(
+    """
+    <div style="text-align: center; color: #6d6d6d; font-size: 14px; font-family: sans-serif; line-height: 1.6;">
+        Created with ❤️ by <b>Dewi Tri Lestari</b> <br>
+        <a href="https://github.com/dewitrilestari/Portofolio" target="_blank" style="color: #ff4b4b; text-decoration: none; margin-right: 15px; font-weight: bold;">
+            🐙 GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/dewitrilestari/" target="_blank" style="color: #ff4b4b; text-decoration: none; font-weight: bold;">
+            💼 LinkedIn
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
