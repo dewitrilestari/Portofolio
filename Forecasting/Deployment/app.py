@@ -1,250 +1,229 @@
 import os
-import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import joblib
-
-# Set Page Config di awal untuk mematikan potensi konflik layout
-st.set_page_config(page_title="Forecasting Curah Hujan BMKG", layout="wide")
-
-# ====================================================================
-# 1. MONKEY PATCHING UNTUK LAYER DENSE KERAS (Mencegah error kuantisasi)
-# ====================================================================
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import streamlit as st
 import tensorflow as tf
-from tensorflow.keras.layers import Dense
 
-original_dense_from_config = Dense.from_config
+# ==========================================
+# 1. KONFIGURASI HALAMAN STREAMLIT
+# ==========================================
+st.set_page_config(
+    page_title="Forecasting Curah Hujan BMKG", page_icon="🌧️", layout="wide"
+)
 
-def patched_dense_from_config(cls, config):
-    config.pop('quantization_config', None)
-    return original_dense_from_config(config)
+st.title("🌧️ Aplikasi Forecasting Curah Hujan (RR) BMKG - LSTM")
+st.markdown(
+    "Aplikasi web ini menggunakan model **Deep Learning LSTM** untuk memprediksi akumulasi curah hujan harian secara otomatis."
+)
 
-Dense.from_config = classmethod(patched_dense_from_config)
-
-from tensorflow.keras.models import load_model
-
-# Mendapatkan direktori tempat file app.py berada
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# ====================================================================
-# 2. FUNGSI LOAD DATA, MODEL, & SCALER
-# ====================================================================
+# ==========================================
+# 2. LOAD MODEL & SCALER (CACHE RESOURCE)
+# ==========================================
 @st.cache_resource
-def load_my_lstm_model():
-    model_path = os.path.join(BASE_DIR, 'model_lstm.keras')
-    return load_model(model_path)
+def load_artifacts():
+    scaler_path = "scaler.pkl"
 
-@st.cache_resource
-def load_scaler():
-    scaler_path = os.path.join(BASE_DIR, 'scaler.pkl')
-    return joblib.load(scaler_path)
+    # Deteksi ekstensi model (.keras atau .h5)
+    if os.path.exists("model_lstm.keras"):
+        model_path = "model_lstm.keras"
+    elif os.path.exists("model_lstm.h5"):
+        model_path = "model_lstm.h5"
+    else:
+        st.error(
+            "❌ Model LSTM (model_lstm.keras / model_lstm.h5) tidak ditemukan!"
+        )
+        st.stop()
+
+    if not os.path.exists(scaler_path):
+        st.error("❌ File scaler.pkl tidak ditemukan!")
+        st.stop()
+
+    model = tf.keras.models.load_model(model_path)
+    scaler = joblib.load(scaler_path)
+    return model, scaler
+
+
+model_lstm, scaler = load_artifacts()
+
+# ==========================================
+# 3. SIDEBAR & PEMUATAN DATASET
+# ==========================================
+st.sidebar.header("⚙️ Pengaturan Data & Parameter")
+
+data_url = "https://raw.github.com/dewitrilestari/Portofolio/main/Forecasting/Merge%20Data/Juli%202024%20-%20Juli%202026.xlsx"
+
+uploaded_file = st.sidebar.file_uploader(
+    "Upload File Dataset (Excel/CSV)", type=["xlsx", "csv"]
+)
+
 
 @st.cache_data
-def load_historical_data():
-    data_path = os.path.join(BASE_DIR, 'Juli 2024 - Juli 2026.xlsx')
-    df = pd.read_excel(data_path)
-    
-    # Pastikan kolom Tanggal bertipe Datetime
-    df['Tanggal'] = pd.to_datetime(df['Tanggal'])
-    
-    # Bersihkan nama kolom dari spasi tidak terlihat
-    df.columns = df.columns.str.strip()
-    
-    # Pastikan nilai Curah Hujan (RR) tidak ada yang bernilai negatif
-    if 'RR' in df.columns:
-        df['RR'] = df['RR'].clip(lower=0.0)
-    
-    # --- REKAYASA FITUR OTOMATIS (MENGATASI KOLOM YANG HILANG DI EXCEL) ---
-    if 'bulan' not in df.columns:
-        df['bulan'] = df['Tanggal'].dt.month
-    if 'hari' not in df.columns:
-        df['hari'] = df['Tanggal'].dt.day
-        
-    if 'RR' in df.columns:
-        if 'RR_lag_1' not in df.columns:
-            df['RR_lag_1'] = df['RR'].shift(1)
-        if 'RR_lag_3' not in df.columns:
-            df['RR_lag_3'] = df['RR'].shift(3)
-        if 'RR_lag_7' not in df.columns:
-            df['RR_lag_7'] = df['RR'].shift(7)
-            
-    # Hapus baris kosong akibat pergeseran lag
-    df = df.dropna().reset_index(drop=True)
+def load_data(file_source):
+    if isinstance(file_source, str):
+        df = pd.read_excel(file_source)
+    else:
+        if file_source.name.endswith(".csv"):
+            df = pd.read_csv(file_source)
+        else:
+            df = pd.read_excel(file_source)
     return df
 
-# Memanggil fungsi load secara aman
+
 try:
-    model_lstm = load_my_lstm_model()
-    scaler = load_scaler()
-    df_filtered = load_historical_data()
-    model_loaded = True
+    if uploaded_file is not None:
+        df = load_data(uploaded_file)
+        st.sidebar.success("✅ File kustom berhasil diunggah!")
+    else:
+        df = load_data(data_url)
+        st.sidebar.info("ℹ️ Menggunakan dataset default (GitHub).")
 except Exception as e:
-    st.error(f"Gagal memuat komponen: {e}")
-    model_loaded = False
+    st.error(f"Gagal memuat dataset: {e}")
+    st.stop()
 
-# Nilai evaluasi statis dari hasil training
-metrics_data = {
-    'MAE': 6.627,
-    'RMSE': 12.857
-}
+# Preprocessing Ringan Data Awal
+df["Tanggal"] = pd.to_datetime(df["Tanggal"])
+if "RR" in df.columns:
+    df["RR"] = df["RR"].clip(lower=0)
 
-# Jika semua komponen berhasil dimuat
-if model_loaded:
-    # ==============================================================================
-    # REVISI 1: PENAMBAHAN INFORMASI APLIKASI DI SIDEBAR (PRIORITAS TINGGI)
-    # ==============================================================================
-    with st.sidebar:
-        st.header("ℹ️ Tentang Aplikasi")
-        st.info("""
-        **Tujuan Aplikasi:**
-        Dashboard ini dirancang untuk memprediksi (*forecasting*) akumulasi curah hujan harian (RR) secara otomatis sebagai sistem pendukung keputusan mitigasi bencana hidrometeorologi.
-        """)
-        
-        st.header("⚙️ Detail Teknis")
-        st.markdown(f"""
-        * **Sumber Data:** Dataset Cuaca BMKG Sleman, DIY (Juli 2024 - Juli 2026)
-        * **Ukuran Data:** ~730 data rekaman harian
-        * **Model Prediksi:** Long Short-Term Memory (LSTM) Deep Learning
-        * **Ekstraksi Fitur:** Parameter Makro Cuaca + Fitur Autoregresif Lag (H-1, H-3, H-7)
-        """)
-        
-        st.markdown("---")
-        
-        st.header("🎛️ Panel Kontrol")
-        # Meletakkan selectbox di dalam scope container sidebar yang bersih
-        horizon = st.selectbox(
-            "Pilih Horizon Forecasting (Hari):",
-            options=[7, 14, 30],
-            index=0,
-            key="horizon_selector"
-        )
-        st.markdown("<br>" * 10, unsafe_allow_html=True)
-    
-    # ==============================================================================
-    # Halaman Utama Dashboard
-    # ==============================================================================
-    st.title("🌧️ Dashboard Forecasting Curah Hujan BMKG (LSTM)")
-    st.markdown("Aplikasi berbasis kecerdasan buatan untuk meramal intensitas curah hujan berdasarkan pola runtun waktu (*time-series*).")
-    
-    # ==============================================================================
-    # GRID METRIK EVALUASI MODEL
-    # ==============================================================================
-    st.subheader("📊 Metrik Evaluasi Model (Data Uji)")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric(label="MAE (Mean Absolute Error)", value=f"{metrics_data['MAE']} mm")
-    with col2:
-        st.metric(label="RMSE (Root Mean Squared Error)", value=f"{metrics_data['RMSE']} mm")
-        
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # ==============================================================================
-    # PROSES FORECASTING REKURSIF (FIXED LOGIC)
-    # ==============================================================================
-    fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
-                   'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
-    
-    fitur_tersedia = [col for col in fitur_kolom if col in df_filtered.columns]
-    
-    if len(fitur_tersedia) == 13:
-        last_row = df_filtered[fitur_kolom].iloc[-1:].copy()
-        
+# Tampilkan ringkasan data
+st.subheader("📊 Data Historis Terakhir")
+st.dataframe(df.tail(10), use_container_width=True)
+
+# ==========================================
+# 4. PROSES FORECASTING FUTURE
+# ==========================================
+forecast_days_option = st.sidebar.slider(
+    "Pilih Rentang Forecast (Hari ke Depan):",
+    min_value=7,
+    max_value=30,
+    value=14,
+    step=1,
+)
+
+if st.sidebar.button("🚀 Jalankan Prediksi Future Forecast"):
+    with st.spinner("Sedang memproses prediksi LSTM..."):
+        forecast_periods = [7, 14, 30]
+        max_forecast = max(forecast_periods)
+
+        # 1. Ambil daftar fitur resmi yang dipelajari scaler saat training
+        expected_features = list(scaler.feature_names_in_)
+
+        # 2. Siapkan data X (Fitur Prediktor)
+        X_data = df.drop(columns=["Tanggal", "DDD_CAR", "RR"], errors="ignore")
+
+        # Ambil nilai baris terakhir sebagai baseline eksogen
+        baseline_row = X_data.iloc[-1]
+
         future_predictions = []
-        current_row = last_row.copy()
-        
-        last_date = pd.to_datetime(df_filtered['Tanggal'].iloc[-1])
+        last_date = df["Tanggal"].iloc[-1]
         current_date = last_date
-        
-        prediction_history = list(df_filtered['RR'].iloc[-10:].values) 
-        
-        for i in range(horizon):
+
+        # Loop prediksi harian
+        for i in range(max_forecast):
             current_date = current_date + pd.Timedelta(days=1)
-            
-            # Susun fitur-fitur lag secara presisi berdasarkan riwayat aktual/prediksi
-            current_row['RR_lag_1'] = prediction_history[-1]  
-            current_row['RR_lag_3'] = prediction_history[-3]  
-            current_row['RR_lag_7'] = prediction_history[-7]  
-            
-            # Update fitur kalender
-            current_row['bulan'] = current_date.month
-            current_row['hari'] = current_date.day
-            
-            # Scaling & Reshape ke format 3D untuk LSTM
-            expected_features = list(scaler.feature_names_in_)
-            features_to_scale = pd.DataFrame([current_row])
+
+            # Buat baris baru menggunakan nilai baseline
+            current_row = pd.Series(index=X_data.columns, dtype="float64")
+            for col in X_data.columns:
+                current_row[col] = baseline_row[col]
+
+            # 3. Penanganan Dimensi & Konversi ke DataFrame 2D (Mencegah ValueError)
+            if isinstance(current_row, pd.Series):
+                features_to_scale = pd.DataFrame([current_row])
+            else:
+                row_2d = np.array(current_row).reshape(1, -1)
+                features_to_scale = pd.DataFrame(row_2d)
+
+            # 4. Filter HANYA kolom yang dikenal oleh scaler (Mencegah Error Unseen Feature)
             features_to_scale_filtered = features_to_scale[expected_features]
+
+            # 5. Scaling & Reshape 3D Khusus LSTM (1, 1, num_features)
             features_scaled = scaler.transform(features_to_scale_filtered)
-            features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
-            
-            # Prediksi nilai curah hujan asli
-            pred_val = model_lstm.predict(features_3d, verbose=0).flatten()[0]
-            pred_val = max(0.0, float(pred_val))  
-            
+            features_3d = np.reshape(
+                features_scaled, (1, 1, features_scaled.shape[1])
+            )
+
+            # 6. Prediksi LSTM & Reverse Transform dari Log ke mm
+            pred_val_log = model_lstm.predict(features_3d, verbose=0).flatten()[
+                0
+            ]
+            pred_val = np.expm1(pred_val_log)
+            pred_val = max(0.0, float(pred_val))
+
             future_predictions.append(pred_val)
-            prediction_history.append(pred_val) 
-            
-        future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=horizon, freq='D')
-        df_forecast = pd.DataFrame({'Tanggal': future_dates, 'Prediksi Curah Hujan (mm)': future_predictions})
-        
-        # ==============================================================================
-        # VISUALISASI GRAFIK
-        # ==============================================================================
-        st.subheader("📈 Visualisasi Data Aktual dan Hasil Forecast")
-        
+
+        # Generate Tanggal Masa Depan
+        future_dates = pd.date_range(
+            start=last_date + pd.Timedelta(days=1),
+            periods=max_forecast,
+            freq="D",
+        )
+
+        # ==========================================
+        # 5. VISUALISASI HASIL & DOWNLOAD
+        # ==========================================
+        st.subheader("📈 Visualisasi Hasil Forecasting Curah Hujan")
+
         fig, ax = plt.subplots(figsize=(12, 5))
-        
-        # Plot Data Historis Aktual (30 Hari Terakhir)
-        dates_actual = df_filtered['Tanggal'].iloc[-30:]
-        y_actual = df_filtered['RR'].iloc[-30:]
-        ax.plot(dates_actual, y_actual, label='Data Aktual (30 Hari Terakhir)', color='black', linewidth=2, marker='o', markersize=3)
-        
-        # Plot Data Hasil Forecast
-        ax.plot(df_forecast['Tanggal'], df_forecast['Prediksi Curah Hujan (mm)'], 
-                label=f'Forecast LSTM ({horizon} Hari)', color='red', linestyle='--', marker='o', markersize=5)
-                
+
+        # Plot 30 Hari Aktual Terakhir
+        dates_actual_plot = df["Tanggal"].iloc[-30:]
+        y_actual_plot = df["RR"].iloc[-30:]
+        ax.plot(
+            dates_actual_plot,
+            y_actual_plot,
+            label="Data Aktual (30 Hari Terakhir)",
+            color="black",
+            linewidth=2,
+        )
+
+        # Plot Garis Forecast 7, 14, dan 30 Hari
+        colors = {7: "green", 14: "blue", 30: "red"}
+        styles = {7: "-", 14: "--", 30: "-."}
+
+        for days in forecast_periods:
+            ax.plot(
+                future_dates[:days],
+                future_predictions[:days],
+                label=f"Forecast {days} Hari ke Depan",
+                color=colors.get(days, "purple"),
+                linestyle=styles.get(days, "-"),
+                marker="o",
+                markersize=4,
+            )
+
+        ax.set_title("Visualisasi Future Forecasting Curah Hujan (RR) - Model LSTM")
         ax.set_xlabel("Tanggal")
         ax.set_ylabel("Curah Hujan (mm)")
-        ax.legend(loc="upper left")
-        ax.grid(True, linestyle='--', alpha=0.5)
+        ax.legend()
+        ax.grid(True, linestyle="--", alpha=0.5)
         fig.autofmt_xdate()
-        
-        st.pyplot(fig)
-        
-        # ==============================================================================
-        # MENAMPILKAN NILAI PREDIKSI DALAM TABEL
-        # ==============================================================================
-        st.subheader(f"📋 Tabel Nilai Hasil Prediksi ({horizon} Hari ke Depan)")
-        
-        df_table = df_forecast.copy()
-        df_table['Tanggal'] = df_table['Tanggal'].dt.strftime('%Y-%m-%d')
-        df_table['Prediksi Curah Hujan (mm)'] = df_table['Prediksi Curah Hujan (mm)'].round(3)
-        
-        col_table, col_empty = st.columns([0.6, 0.4])
-        with col_table:
-            st.dataframe(df_table, use_container_width=True, hide_index=True)
-            
-    else:
-        st.error(f"Gagal memproses data. Scaler membutuhkan 13 fitur, hanya tersedia {len(fitur_tersedia)}.")
 
-    # ==============================================================================
-    # REVISI 2: PROFESIONALISME & KONTAK (FOOTER APLIKASI AMAN YANG DIBATASI ST.CONTAINER)
-    # ==============================================================================
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    footer_container = st.container()
-    with footer_container:
-        st.markdown(
-            """
-            <div style="text-align: center; color: #666666; font-size: 14px; padding-bottom: 20px;">
-                <p style="margin-bottom: 5px;"><strong>Created by Dewi Tri Lestari</strong></p>
-                <p style="margin-top: 0px;">
-                    <a href="https://github.com/dewitrilestari/Portofolio/Forecasting" target="_blank" style="color: #1f77b4; text-decoration: none; margin-right: 20px; font-weight: bold;">🐙 GitHub Portfolio</a>
-                    <a href="https://linkedin.com/in/dewitrilestari" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">👔 LinkedIn Profile</a>
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.pyplot(fig)
+
+        # Tabel Output Sesuai Pilihan Slider
+        df_forecast_res = pd.DataFrame(
+            {
+                "Tanggal": future_dates[:forecast_days_option],
+                "Prediksi Curah Hujan (mm)": [
+                    round(p, 2)
+                    for p in future_predictions[:forecast_days_option]
+                ],
+            }
+        )
+
+        st.subheader(
+            f"📋 Tabel Hasil Forecasting ({forecast_days_option} Hari ke Depan)"
+        )
+        st.dataframe(df_forecast_res, use_container_width=True)
+
+        # Fitur Unduh Hasil Prediksi (CSV)
+        csv_data = df_forecast_res.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Download Hasil Prediksi (CSV)",
+            data=csv_data,
+            file_name=f"forecast_curah_hujan_{forecast_days_option}hari.csv",
+            mime="text/csv",
         )
