@@ -172,8 +172,9 @@ if model_loaded:
             current_row['hari'] = current_date.day
             
             # Scaling & Reshape ke format 3D untuk LSTM
-            features_to_scale = current_row[fitur_kolom]
-            features_scaled = scaler.transform(features_to_scale)
+            expected_features = list(scaler.feature_names_in_)
+            features_to_scale_filtered = features_to_scale[expected_features]
+            features_scaled = scaler.transform(features_to_scale_filtered)
             features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
             
             # Prediksi nilai curah hujan asli
