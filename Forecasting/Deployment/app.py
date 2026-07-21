@@ -173,6 +173,7 @@ if model_loaded:
             
             # Scaling & Reshape ke format 3D untuk LSTM
             expected_features = list(scaler.feature_names_in_)
+            features_to_scale = pd.DataFrame([current_row])
             features_to_scale_filtered = features_to_scale[expected_features]
             features_scaled = scaler.transform(features_to_scale_filtered)
             features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
