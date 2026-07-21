@@ -23,30 +23,35 @@ st.markdown(
 # ==========================================
 @st.cache_resource
 def load_artifacts():
-    scaler_path = "scaler.pkl"
+    # Mengambil lokasi direktori tempat app.py berada secara presisi
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    # Deteksi ekstensi model (.keras atau .h5)
-    if os.path.exists("model_lstm.keras"):
-        model_path = "model_lstm.keras"
-    elif os.path.exists("model_lstm.h5"):
-        model_path = "model_lstm.h5"
+    scaler_path = os.path.join(BASE_DIR, "scaler.pkl")
+    model_keras_path = os.path.join(BASE_DIR, "model_lstm.keras")
+    model_h5_path = os.path.join(BASE_DIR, "model_lstm.h5")
+
+    # Deteksi file model
+    if os.path.exists(model_keras_path):
+        model_path = model_keras_path
+    elif os.path.exists(model_h5_path):
+        model_path = model_h5_path
     else:
         st.error(
-            "❌ Model LSTM (model_lstm.keras / model_lstm.h5) tidak ditemukan!"
+            f"❌ Model LSTM (model_lstm.keras / model_lstm.h5) tidak ditemukan di folder: `{BASE_DIR}`"
         )
         st.stop()
 
     if not os.path.exists(scaler_path):
-        st.error("❌ File scaler.pkl tidak ditemukan!")
+        st.error(
+            f"❌ File scaler.pkl tidak ditemukan di folder: `{BASE_DIR}`"
+        )
         st.stop()
 
     model = tf.keras.models.load_model(model_path)
     scaler = joblib.load(scaler_path)
     return model, scaler
 
-
 model_lstm, scaler = load_artifacts()
-
 # ==========================================
 # 3. SIDEBAR & PEMUATAN DATASET
 # ==========================================
