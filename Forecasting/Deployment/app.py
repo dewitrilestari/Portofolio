@@ -149,9 +149,14 @@ if model_loaded:
     fitur_kolom = ['TN', 'TX', 'TAVG', 'RH_AVG', 'SS', 'FF_X', 'DDD_X', 'FF_AVG', 
                    'RR_lag_1', 'RR_lag_3', 'RR_lag_7', 'bulan', 'hari']
     
-    fitur_tersedia = [col for col in fitur_kolom if col in df_filtered.columns]
-    
-    if len(fitur_tersedia) == 13:
+    # 1. Otomatis ambil fitur yang dikenal oleh scaler.pkl untuk mencegah mismatch
+    if hasattr(scaler, 'feature_names_in_'):
+        expected_features = list(scaler.feature_names_in_)
+    else:
+        expected_features = fitur_kolom
+
+    # Cek apakah semua fitur yang dibutuhkan scaler ada di dataframe
+    if all(col in df_filtered.columns for col in expected_features):
         last_row = df_filtered[fitur_kolom].iloc[-1:].copy()
         
         future_predictions = []
@@ -174,8 +179,10 @@ if model_loaded:
             current_row['bulan'] = current_date.month
             current_row['hari'] = current_date.day
             
+            # 2. FILTER HANYA FITUR YANG DIKENAL SCALER
+            features_to_scale = current_row[expected_features]
+            
             # Scaling & Reshape ke format 3D untuk LSTM
-            features_to_scale = current_row[fitur_kolom]
             features_scaled = scaler.transform(features_to_scale)
             features_3d = np.reshape(features_scaled, (1, 1, features_scaled.shape[1]))
             
