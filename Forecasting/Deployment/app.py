@@ -85,9 +85,8 @@ except Exception as e:
 
 # Nilai evaluasi statis dari hasil training
 metrics_data = {
-    'MAE': 6.627,
-    'RMSE': 12.857,
-    'MAPE': 162.595
+    'MAE': 6.172,
+    'RMSE': 13.285
 }
 
 # Jika semua komponen berhasil dimuat
@@ -132,15 +131,13 @@ if model_loaded:
     # GRID METRIK EVALUASI MODEL
     # ==============================================================================
     st.subheader("📊 Metrik Evaluasi Model (Data Uji)")
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     
     with col1:
         st.metric(label="MAE (Mean Absolute Error)", value=f"{metrics_data['MAE']} mm")
     with col2:
         st.metric(label="RMSE (Root Mean Squared Error)", value=f"{metrics_data['RMSE']} mm")
-    with col3:
-        st.metric(label="MAPE", value=f"{metrics_data['MAPE']:.3f} %")
-        
+
     st.markdown("<br>", unsafe_allow_html=True)
     
     # ==============================================================================
