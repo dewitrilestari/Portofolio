@@ -1,1 +1,3 @@
 Sentimen/venv/
+.env
+*.env
