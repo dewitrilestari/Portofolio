@@ -103,7 +103,7 @@ Berikut adalah langkah-langkah untuk menjalankan aplikasi ini secara lokal di la
 
 ```bash
 # 1. Clone repository dari GitHub
-git clone [https://github.com/dewitrilestari/Portofolio.git](https://github.com/dewitrilestari/Portofolio.git)
+git clone [https://github.com/dewitrilestari/Portofolio.git]
 
 # 2. Masuk ke folder deployment proyek AI KTP
 cd Portofolio/AI_KTP/Deployment
