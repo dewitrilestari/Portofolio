@@ -94,3 +94,26 @@ Guna mematuhi standar *Data Privacy* dan Perlindungan Data Pribadi (PDP), data s
 
 ### 5. Relational Database Logging (SQLite)
 Hasil ekstraksi data asli beserta metrik status validasinya disimpan ke dalam database relasional **SQLite3** (`ktp_database.db`) untuk kebutuhan *audit trail* dan pemantauan riwayat transaksi pada halaman *Database History*.
+
+---
+
+## 🚀 Cara Menjalankan Lokal
+
+Berikut adalah langkah-langkah untuk menjalankan aplikasi ini secara lokal di laptop kamu:
+
+```bash
+# 1. Clone repository dari GitHub
+git clone [https://github.com/dewitrilestari/Portofolio.git](https://github.com/dewitrilestari/Portofolio.git)
+
+# 2. Masuk ke folder deployment proyek AI KTP
+cd Portofolio/AI_KTP/Deployment
+
+# 3. Install semua library/dependencies yang dibutuhkan
+pip install -r requirements.txt
+
+# 4. Buat file .env di dalam folder Deployment, lalu isi dengan API Key kamu:
+# OPENROUTER_API_KEY="sk-or-v1-API_KEY_OPENROUTER_KAMU"
+
+# 5. Jalankan aplikasi Streamlit
+streamlit run app.py
+```
