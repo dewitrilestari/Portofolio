@@ -506,7 +506,7 @@ elif page == "Upload Image":
                 ]
                 st.table(pd.DataFrame(val_rows))
 
-                # Ringkasan Status Akhir (Tanpa Balon)
+                # Ringkasan Status Akhir
                 if validation_res["overall_status"] == "VALID":
                     st.success("✅ **STATUS AKHIR DATA KTP: VALID**")
                 else:
@@ -567,3 +567,27 @@ elif page == "Database History":
         st.dataframe(df_display, use_container_width=True)
     else:
         st.info("Belum ada data KTP tersimpan di database.")
+
+
+# ==========================================
+# 🌐 FOOTER APLIKASI
+# ==========================================
+st.markdown("---")
+st.markdown(
+    """
+    <div style="text-align: center; padding: 15px 0 10px 0;">
+        <p style="margin: 0; font-size: 14px; font-weight: 500; color: #4A5568;">
+            Created by <b>Dewi Tri Lestari</b>
+        </p>
+        <p style="margin-top: 8px; font-size: 13px;">
+            <a href="https://github.com/dewitrilestari/Portofolio/tree/main/AI_KTP" target="_blank" style="margin-right: 15px; text-decoration: none; font-weight: 600;">
+                🐙 Link GitHub
+            </a>
+            <a href="https://www.linkedin.com/in/dewitrilestari/" target="_blank" style="text-decoration: none; font-weight: 600;">
+                💼 Link LinkedIn
+            </a>
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
