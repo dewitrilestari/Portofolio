@@ -86,3 +86,11 @@ dob_match = (
     and nik_year == (parsed_dob.year % 100)
 )
 ```
+### 4. Automated Data Masking (Perlindungan Data Pribadi / PII)
+Guna mematuhi standar *Data Privacy* dan Perlindungan Data Pribadi (PDP), data sensitif disamarkan secara otomatis sebelum ditampilkan pada antarmuka Streamlit:
+* **NIK Masking:** Menyisakan 4 digit pertama, sisanya diganti karakter `X` (contoh: `3471XXXXXXXXXXXX`).
+* **Nama Masking:** Nama depan tetap utuh, kata berikutnya disamarkan (contoh: `DEWI T** L******`).
+* **TTL & Alamat Masking:** Menyembunyikan tanggal lahir spesifik dan nomor rumah/RT/RW.
+
+### 5. Relational Database Logging (SQLite)
+Hasil ekstraksi data asli beserta metrik status validasinya disimpan ke dalam database relasional **SQLite3** (`ktp_database.db`) untuk kebutuhan *audit trail* dan pemantauan riwayat transaksi pada halaman *Database History*.
