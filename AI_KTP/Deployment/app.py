@@ -205,7 +205,9 @@ def preprocess_image_bytes(image_bytes: bytes) -> str:
 
 def classify_document(image_bytes: bytes) -> bool:
     if not OPENROUTER_API_KEY:
-        st.error("⚠️ API Key tidak ditemukan. Harap atur Secrets di Streamlit Cloud.")
+        st.error(
+            "⚠️ API Key tidak ditemukan! Pastikan OPENROUTER_API_KEY sudah diisi di Streamlit Secrets."
+        )
         return False
 
     base64_image = preprocess_image_bytes(image_bytes)
@@ -213,12 +215,15 @@ def classify_document(image_bytes: bytes) -> bool:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://streamlit.io",
     }
     prompt_text = 'Apakah gambar ini KTP Indonesia? Jawab HANYA JSON: {"is_ktp": true} atau {"is_ktp": false}'
 
+    # Menggunakan model Vision yang stabil di OpenRouter
     candidate_models = [
-        "google/gemini-2.0-flash-exp:free",
         "openai/gpt-4o-mini",
+        "google/gemini-2.0-flash-001",
+        "google/gemini-flash-1.5",
     ]
 
     for model_name in candidate_models:
@@ -244,11 +249,22 @@ def classify_document(image_bytes: bytes) -> bool:
             res = requests.post(url, headers=headers, json=payload, timeout=20)
             if res.status_code == 200:
                 raw = res.json()["choices"][0]["message"]["content"]
-                return json.loads(raw).get("is_ktp", False)
-        except Exception:
+                # Membersihkan tag markdown jika model mengembalikannya
+                cleaned_raw = (
+                    raw.replace("```json", "").replace("```", "").strip()
+                )
+                res_json = json.loads(cleaned_raw)
+                return res_json.get("is_ktp", False)
+            else:
+                # Tampilkan pesan error OpenRouter untuk mempermudah pembenahan
+                st.warning(
+                    f"⚠️ Model {model_name} Gagal ({res.status_code}): {res.text}"
+                )
+        except Exception as e:
+            st.warning(f"⚠️ Exception pada {model_name}: {e}")
             continue
-    return False
 
+    return False
 
 def extract_ktp_ocr(image_bytes: bytes) -> dict:
     if not OPENROUTER_API_KEY:
