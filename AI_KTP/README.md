@@ -52,3 +52,37 @@ AI_KTP/
 | **SQLite History Logging** | Halaman *Database History* | Menyimpan data hasil ekstraksi ke database SQLite (`ktp_database.db`) dan menampilkan tabel riwayat transaksi secara terorganisir. |
 | **Secure Credentials Management** | Konfigurasi Secrets / `.env` | Mengamankan API Key menggunakan Streamlit Secrets (`st.secrets`) dan file `.env` yang dilindungi oleh `.gitignore`. |
 | **Professional Branding Footer** | Bagian Terbawah Aplikasi | Menyediakan tautan portofolio berupa ikon tautan langsung menuju profil **GitHub** dan **LinkedIn** pembuat aplikasi. |
+
+---
+
+## 📊 Metode yang Digunakan
+
+### 1. Preprocessing Gambar & Base64 Encoding
+Sebelum dikirim ke model AI Vision, gambar KTP diolah terlebih dahulu menggunakan library `PIL` (Pillow) untuk meningkatkan kualitas keterbacaan teks:
+* **Resizing (LANCZOS):** Ukuran gambar diperbesar 2x lipat menggunakan metode *Lanczos Resampling* agar detail huruf kecil pada KTP lebih tajam.
+* **Enhancement Kontras:** Kontras gambar ditingkatkan sebesar 1.4x (`ImageEnhance.Contrast`) untuk memperjelas teks yang pudar atau terkena pantulan cahaya.
+* **Base64 Encoding:** Gambar hasil olahan dikonversi ke format string *Base64* agar dapat dikirim secara aman melalui *payload* REST API OpenRouter.
+
+### 2. Multimodal Vision AI (Classification & OCR)
+Sistem memanfaatkan kombinasi model *Large Multimodal Model (LMM)* melalui gateway OpenRouter API:
+* **Document Classification:** Memanfaatkan model `openai/gpt-4o-mini` atau `google/gemini-2.0-flash` dengan teknik *prompt engineering* berbasis JSON untuk mengklasifikasi apakah dokumen yang diunggah berupa KTP resmi Indonesia.
+* **High-Precision Vision OCR:** Memanfaatkan model `openai/gpt-4o` (*High Detail Vision*) untuk mengekstrak 14 bidang data teks KTP (NIK, Nama, Tempat/Tgl Lahir, Alamat, RT/RW, Agama, Status, Pekerjaan, dll.) secara terstruktur dalam format **JSON**.
+
+### 3. Deterministic NIK Business Rule Engine
+Sistem menjalankan fungsi validasi matematis secara deterministik berdasarkan aturan baku formatur NIK Indonesia (16 digit: 6 digit wilayah, 6 digit tanggal lahir, 4 digit nomor urut):
+* **Format & Numeric Check:** Memastikan NIK terdiri dari tepat 16 digit angka numerik.
+* **Logika Jenis Kelamin & Tanggal Lahir (Aturan $+40$):** Untuk pemegang KTP **Perempuan**, digit tanggal lahir pada NIK secara resmi ditambah angka `40` (contoh: tanggal 15 menjadi 55). Engine validasi secara otomatis mengoreksi nilai tersebut ($day - 40$) untuk mencocokkan keabsahan antara tanggal lahir di NIK dan string `tempat_tgl_lahir`.
+
+```python
+# Potongan logika deterministik validasi NIK (app.py):
+nik_day, nik_month, nik_year = int(nik[6:8]), int(nik), int(nik)
+is_female = nik_day > 40
+expected_gender = "PEREMPUAN" if is_female else "LAKI-LAKI"
+
+actual_nik_day = nik_day - 40 if is_female else nik_day
+dob_match = (
+    actual_nik_day == parsed_dob.day
+    and nik_month == parsed_dob.month
+    and nik_year == (parsed_dob.year % 100)
+)
+```
