@@ -506,10 +506,9 @@ elif page == "Upload Image":
                 ]
                 st.table(pd.DataFrame(val_rows))
 
-                # Ringkasan Status Akhir
+                # Ringkasan Status Akhir (Tanpa Balon)
                 if validation_res["overall_status"] == "VALID":
-                    st.balloons()
-                    st.success("🎉 **STATUS AKHIR DATA KTP: VALID**")
+                    st.success("✅ **STATUS AKHIR DATA KTP: VALID**")
                 else:
                     st.error("⚠️ **STATUS AKHIR DATA KTP: INVALID**")
 
