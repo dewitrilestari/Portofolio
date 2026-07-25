@@ -1,8 +1,8 @@
-# 🪪 Sistem OCR KTP & Validasi AI (e-KYC)
+# 🪪 Sistem OCR KTP & Validasi AI (e-KTP)
 
 Aplikasi web berbasis kecerdasan buatan (*Vision AI & OCR*) untuk mengklasifikasi dokumen KTP Indonesia, mengekstrak data identitas secara terstruktur (JSON), serta menjalankan validasi *business rules* NIK secara otomatis, dibangun menggunakan **Streamlit** dan **OpenRouter API**.
 
-* **Live Demo:** https://dewi-portofolio-ai-ktp.streamlit.app/
+* **Live Demo:** https://ai-ktp-test.streamlit.app/
 * **Model AI:** OpenAI GPT-4o (Vision OCR) & Google Gemini / GPT-4o-Mini (Classification)
 * **API Gateway:** OpenRouter API
 * **Penyimpanan Data:** SQLite Database (`ktp_database.db`)
