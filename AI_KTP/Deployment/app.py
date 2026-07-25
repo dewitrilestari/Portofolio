@@ -23,14 +23,83 @@ st.set_page_config(
 
 
 # ==========================================
-# 🛡️ HELPER & DATA MASKING
+# 🛡️ HELPER & DATA MASKING (KEAMANAN DATA)
 # ==========================================
 def mask_nik(nik: str) -> str:
-    """Menyamarkan NIK dengan menyisakan 4 digit pertama dan mengubah sisanya menjadi 'x'."""
+    """Menyamarkan NIK: 3275XXXXXXXXXXXX."""
     nik_str = str(nik).strip()
     if len(nik_str) >= 4:
-        return nik_str[:4] + "x" * (len(nik_str) - 4)
+        return nik_str[:4] + "X" * (len(nik_str) - 4)
     return nik_str
+
+
+def mask_nama(nama: str) -> str:
+    """Menyamarkan Nama: Nama depan tetap utuh, kata berikutnya disamarkan (contoh: ANDI S*******)."""
+    nama_str = str(nama).strip()
+    parts = nama_str.split()
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0]
+
+    masked_parts = [parts[0]]  # Simpan nama depan
+    for p in parts[1:]:
+        if len(p) > 1:
+            masked_parts.append(p[0] + "*" * (len(p) - 1))
+        else:
+            masked_parts.append("*")
+    return " ".join(masked_parts)
+
+
+def mask_ttl(ttl: str) -> str:
+    """Menyamarkan Tanggal Lahir: JAKARTA, XX-XX-XXXX."""
+    ttl_str = str(ttl).strip()
+    if "," in ttl_str:
+        place, _ = ttl_str.split(",", 1)
+        return f"{place.strip()}, XX-XX-XXXX"
+    return "XX-XX-XXXX"
+
+
+def mask_alamat(alamat: str) -> str:
+    """Menyamarkan Alamat: Menyisakan 2 kata awal, sisanya ***."""
+    alamat_str = str(alamat).strip()
+    words = alamat_str.split()
+    if len(words) <= 2:
+        return alamat_str[:3] + " ***" if len(alamat_str) > 3 else "***"
+    return f"{' '.join(words[:2])} ***"
+
+
+def mask_rt_rw(val: str) -> str:
+    """Menyamarkan RT/RW menjadi XXX."""
+    val_str = str(val).strip()
+    return "XXX" if val_str else ""
+
+
+def apply_full_masking(ocr_data: dict) -> dict:
+    """Fungsi utama untuk menyamarkan seluruh data sensitif sebelum ditampilkan ke UI."""
+    masked_data = ocr_data.copy()
+
+    if "nik" in masked_data and masked_data["nik"]:
+        masked_data["nik"] = mask_nik(masked_data["nik"])
+
+    if "nama" in masked_data and masked_data["nama"]:
+        masked_data["nama"] = mask_nama(masked_data["nama"])
+
+    if "tempat_tgl_lahir" in masked_data and masked_data["tempat_tgl_lahir"]:
+        masked_data["tempat_tgl_lahir"] = mask_ttl(
+            masked_data["tempat_tgl_lahir"]
+        )
+
+    if "alamat" in masked_data and masked_data["alamat"]:
+        masked_data["alamat"] = mask_alamat(masked_data["alamat"])
+
+    if "rt" in masked_data and masked_data["rt"]:
+        masked_data["rt"] = mask_rt_rw(masked_data["rt"])
+
+    if "rw" in masked_data and masked_data["rw"]:
+        masked_data["rw"] = mask_rt_rw(masked_data["rw"])
+
+    return masked_data
 
 
 # ==========================================
@@ -329,6 +398,7 @@ if page == "Home":
         """
         Aplikasi ini memanfaatkan teknologi **AI Vision** mutakhir untuk melakukan ekstraksi data KTP secara otomatis 
         dan menjalankan **Business Rule Validation** resmi untuk memastikan keabsahan nomor NIK, tanggal lahir, dan jenis kelamin.
+        \n🔒 **Perlindungan Privasi**: Seluruh data sensitif yang diunggah secara otomatis disamarkan (*masked*) pada tampilan publik demi keamanan data pengguna.
         """
     )
 
@@ -388,10 +458,8 @@ elif page == "Upload Image":
                 with st.spinner("Mengekstrak data teks KTP..."):
                     ocr_data = extract_ktp_ocr(image_bytes)
 
-                # Copy data untuk Tampilan UI (Masking NIK untuk keamanan publik)
-                display_ocr_data = ocr_data.copy()
-                if "nik" in display_ocr_data and display_ocr_data["nik"]:
-                    display_ocr_data["nik"] = mask_nik(display_ocr_data["nik"])
+                # Terapkan Data Masking penuh untuk tampilan UI
+                display_ocr_data = apply_full_masking(ocr_data)
 
                 # Format Tampilan Tabel OCR (Field | Value)
                 df_ocr = pd.DataFrame(
@@ -472,9 +540,17 @@ elif page == "Database History":
     if records:
         df_records = pd.DataFrame(records)
 
-        # Samarkan NIK pada tampilan riwayat agar aman
+        # Samarkan bidang sensitif pada tabel riwayat
         if "nik" in df_records.columns:
             df_records["nik"] = df_records["nik"].apply(mask_nik)
+        if "nama" in df_records.columns:
+            df_records["nama"] = df_records["nama"].apply(mask_nama)
+        if "tempat_tgl_lahir" in df_records.columns:
+            df_records["tempat_tgl_lahir"] = df_records[
+                "tempat_tgl_lahir"
+            ].apply(mask_ttl)
+        if "alamat" in df_records.columns:
+            df_records["alamat"] = df_records["alamat"].apply(mask_alamat)
 
         # Reorder / Select Kolom Tampilan
         columns_to_show = [
