@@ -1,4 +1,4 @@
-# 🪪 Sistem OCR KTP & Validasi AI (e-KTP)
+# 🪪 Sistem OCR KTP & Validasi AI (e-KYC)
 
 Aplikasi web berbasis kecerdasan buatan (*Vision AI & OCR*) untuk mengklasifikasi dokumen KTP Indonesia, mengekstrak data identitas secara terstruktur (JSON), serta menjalankan validasi *business rules* NIK secara otomatis, dibangun menggunakan **Streamlit** dan **OpenRouter API**.
 
