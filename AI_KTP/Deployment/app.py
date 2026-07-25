@@ -2,24 +2,26 @@ import base64
 from datetime import datetime
 import io
 import json
+import os
 import sqlite3
 import pandas as pd
 from PIL import Image, ImageEnhance
 import requests
 import streamlit as st
 
-# ==========================================
-# 🔑 KONFIGURASI API KEY & DATABASE
-# ==========================================
-OPENROUTER_API_KEY = (
-    "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"
-)
-DB_NAME = "ktp_database.db"
-
 # Page Config Streamlit
 st.set_page_config(
     page_title="Sistem OCR KTP & Validasi AI", page_icon="🪪", layout="wide"
 )
+
+# ==========================================
+# 🔑 KONFIGURASI SECURE API KEY & DATABASE
+# ==========================================
+# Membaca API Key dari Streamlit Secrets (Aman dari GitHub Publik)
+OPENROUTER_API_KEY = st.secrets.get(
+    "OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", "")
+)
+DB_NAME = "ktp_database.db"
 
 
 # ==========================================
@@ -202,6 +204,10 @@ def preprocess_image_bytes(image_bytes: bytes) -> str:
 
 
 def classify_document(image_bytes: bytes) -> bool:
+    if not OPENROUTER_API_KEY:
+        st.error("⚠️ API Key tidak ditemukan. Harap atur Secrets di Streamlit Cloud.")
+        return False
+
     base64_image = preprocess_image_bytes(image_bytes)
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -245,6 +251,10 @@ def classify_document(image_bytes: bytes) -> bool:
 
 
 def extract_ktp_ocr(image_bytes: bytes) -> dict:
+    if not OPENROUTER_API_KEY:
+        st.error("⚠️ API Key tidak ditemukan.")
+        return {}
+
     base64_image = preprocess_image_bytes(image_bytes)
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
