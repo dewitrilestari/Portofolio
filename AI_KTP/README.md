@@ -117,3 +117,42 @@ pip install -r requirements.txt
 # 5. Jalankan aplikasi Streamlit
 streamlit run app.py
 ```
+
+---
+
+## 🌐 Deploy
+
+Aplikasi ini dideploy secara publik menggunakan **Streamlit Community Cloud** yang terintegrasi secara *continuous deployment* langsung dengan repositori GitHub (`Portofolio`).
+
+* **Keamanan Kredensial:** Variabel sensitif seperti `OPENROUTER_API_KEY` disimpan dan dikelola dengan aman melalui fitur **Streamlit Secrets Management** (`st.secrets`), sehingga tidak terekspos di dalam repositori publik.
+* **Continuous Deployment:** Setiap kali ada pembaruan kode pada *branch* `main` di GitHub, server Streamlit Cloud akan secara otomatis memperbarui versi aplikasi yang berjalan.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Python:** Bahasa pemrograman utama untuk seluruh logika backend dan integrasi AI.
+* **Streamlit:** Framework aplikasi web interaktif untuk membangun antarmuka dashboard e-KYC.
+* **OpenAI GPT-4o & Gemini 2.0 Flash (via OpenRouter API):** Model *Multimodal Vision AI* untuk klasifikasi jenis dokumen dan ekstraksi teks OCR berpresisi tinggi.
+* **SQLite3:** Database relasional lokal untuk menyimpan riwayat transaksi ekstraksi dan hasil validasi (*audit trail*).
+* **Pillow (PIL):** Library *image processing* untuk manipulasi gambar, peningkatan kontras (*enhancement*), dan re-scaling KTP.
+* **Pandas:** Manipulasi data terstruktur dan konversi tabel riwayat dari SQLite.
+* **Requests & Python-Dotenv:** Pengelolaan koneksi REST API dan membaca variabel lingkungan dari file `.env`.
+
+---
+
+## 📈 Manfaat Praktis & Bisnis
+
+* **Otomasi Proses e-KYC & Onboarding:** Mempercepat verifikasi identitas calon pelanggan pada industri Fintech, Perbankan, E-commerce, dan Layanan Digital.
+* **Pengurangan *Human Error*:** Menghindari kesalahan pengetikan (*typo*) NIK, nama, atau alamat yang biasa terjadi pada proses entri data manual.
+* **Kepatuhan Perlindungan Data Pribadi (PDP):** Fitur *data masking* memastikan data identitas sensitif (PII) tidak terekspos di layar tampilan saat digunakan di lingkungan umum.
+* **Audit Trail yang Terstruktur:** Penyimpanan riwayat ke SQLite memudahkan tim operasional melakukan penelusuran kembali (*log review*) terhadap hasil ekstraksi dokumen.
+* **Bukti Kompetensi Portofolio:** Menunjukkan penguasaan integrasi *Multimodal AI Vision*, rekayasa logika bisnis deterministik, keamanan data, dan *deployment* aplikasi cloud *end-to-end*.
+
+---
+
+## ⚠️ Catatan Penting
+
+* **Kualitas Gambar/Foto KTP:** Keakuratan ekstraksi OCR sangat bergantung pada pencahayaan foto, tingkat ketajaman (*focus*), keutuhan fisik KTP, dan minimnya pantulan cahaya (*glare*) pada gambar yang diunggah.
+* **Keamanan Kredensial (API Key):** Jangan pernah menuliskan API Key secara langsung (*hardcode*) di dalam kode Python. Selalu gunakan file `.env` di komputer lokal (serta daftarkan di `.gitignore`) dan manfaatkan *Streamlit Secrets* di server produksi.
+* **Variasi Format KTP:** Beberapa KTP lama atau KTP dengan cetakan pudar mungkin memerlukan verifikasi manual dari operator jika tingkat kejelasan gambar terlalu rendah.
