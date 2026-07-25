@@ -23,6 +23,17 @@ st.set_page_config(
 
 
 # ==========================================
+# 🛡️ HELPER & DATA MASKING
+# ==========================================
+def mask_nik(nik: str) -> str:
+    """Menyamarkan NIK dengan menyisakan 4 digit pertama dan mengubah sisanya menjadi 'x'."""
+    nik_str = str(nik).strip()
+    if len(nik_str) >= 4:
+        return nik_str[:4] + "x" * (len(nik_str) - 4)
+    return nik_str
+
+
+# ==========================================
 # 🗄️ DATABASE FUNCTIONS (SQLITE)
 # ==========================================
 def init_db():
@@ -296,14 +307,14 @@ def validate_ktp_business_rules(data: dict) -> dict:
 
 
 # ==========================================
-# 🎛️ STREAMLIT INTERFACE (SIDEBAR NAVIGATION)
+# 🎛️ STREAMLIT INTERFACE (NAVIGATION)
 # ==========================================
 init_db()
 
 st.sidebar.title("📌 Navigasi")
 page = st.sidebar.radio(
     "Pilih Halaman:",
-    ["Home", "Upload & Process Image", "Database History"],
+    ["Home", "Upload Image", "Database History"],
 )
 
 # ------------------------------------------
@@ -337,9 +348,9 @@ if page == "Home":
         """)
 
 # ------------------------------------------
-# 2. HALAMAN UPLOAD & PROCESS IMAGE
+# 2. HALAMAN UPLOAD IMAGE
 # ------------------------------------------
-elif page == "Upload & Process Image":
+elif page == "Upload Image":
     st.title("📤 Upload Image & Process OCR")
     st.write(
         "Unggah foto KTP Indonesia untuk menguji klasifikasi, ekstraksi OCR, dan validasi data."
@@ -369,7 +380,7 @@ elif page == "Upload & Process Image":
                 is_ktp = classify_document(image_bytes)
 
             if is_ktp:
-                st.success("✅ **Prediction**: KTP Indonesia")
+                st.success("✅ **Prediction**: KTP")
                 st.markdown("---")
 
                 # OCR Extraction
@@ -377,11 +388,16 @@ elif page == "Upload & Process Image":
                 with st.spinner("Mengekstrak data teks KTP..."):
                     ocr_data = extract_ktp_ocr(image_bytes)
 
+                # Copy data untuk Tampilan UI (Masking NIK untuk keamanan publik)
+                display_ocr_data = ocr_data.copy()
+                if "nik" in display_ocr_data and display_ocr_data["nik"]:
+                    display_ocr_data["nik"] = mask_nik(display_ocr_data["nik"])
+
                 # Format Tampilan Tabel OCR (Field | Value)
                 df_ocr = pd.DataFrame(
                     [
                         {"Field": k.replace("_", " ").upper(), "Value": v}
-                        for k, v in ocr_data.items()
+                        for k, v in display_ocr_data.items()
                     ]
                 )
                 st.table(df_ocr)
@@ -392,54 +408,32 @@ elif page == "Upload & Process Image":
                 st.subheader("🛡️ Validation Result")
                 validation_res = validate_ktp_business_rules(ocr_data)
 
-                # Tabel Status Validasi Per Bidang
+                # Tabel Status Validasi Per Aturan
                 val_rows = [
                     {
-                        "Bidang / Aturan": "Panjang NIK (16 Digit)",
+                        "Aturan Validasi": "NIK (16 Digit)",
                         "Status": (
-                            "✅ VALID"
+                            "VALID"
                             if validation_res["nik_length"]["valid"]
-                            else "❌ INVALID"
+                            else "INVALID"
                         ),
-                        "Keterangan": validation_res["nik_length"]["message"],
                     },
                     {
-                        "Bidang / Aturan": "Karakter NIK (Numeric)",
+                        "Aturan Validasi": "Tanggal Lahir",
                         "Status": (
-                            "✅ VALID"
-                            if validation_res["nik_is_numeric"]["valid"]
-                            else "❌ INVALID"
-                        ),
-                        "Keterangan": validation_res["nik_is_numeric"][
-                            "message"
-                        ],
-                    },
-                    {
-                        "Bidang / Aturan": "Format Tanggal Lahir",
-                        "Status": (
-                            "✅ VALID"
+                            "VALID"
                             if validation_res["dob_format"]["valid"]
-                            else "❌ INVALID"
+                            and validation_res["dob_match"]["valid"]
+                            else "INVALID"
                         ),
-                        "Keterangan": validation_res["dob_format"]["message"],
                     },
                     {
-                        "Bidang / Aturan": "Kesesuaian Jenis Kelamin",
+                        "Aturan Validasi": "Jenis Kelamin",
                         "Status": (
-                            "✅ VALID"
+                            "VALID"
                             if validation_res["gender_match"]["valid"]
-                            else "❌ INVALID"
+                            else "INVALID"
                         ),
-                        "Keterangan": validation_res["gender_match"]["message"],
-                    },
-                    {
-                        "Bidang / Aturan": "Kesesuaian Tanggal Lahir vs NIK",
-                        "Status": (
-                            "✅ VALID"
-                            if validation_res["dob_match"]["valid"]
-                            else "❌ INVALID"
-                        ),
-                        "Keterangan": validation_res["dob_match"]["message"],
                     },
                 ]
                 st.table(pd.DataFrame(val_rows))
@@ -451,14 +445,14 @@ elif page == "Upload & Process Image":
                 else:
                     st.error("⚠️ **STATUS AKHIR DATA KTP: INVALID**")
 
-                # Simpan otomatis ke SQLite
+                # Simpan data asli ke SQLite
                 saved_id = save_ktp_record(ocr_data, validation_res)
                 st.caption(
-                    f"💾 Data berhasil disimpan otomatis ke SQLite (Record ID: {saved_id})"
+                    f"💾 Data tersimpan otomatis ke Database (Record ID: {saved_id})"
                 )
 
             else:
-                st.error("❌ **Prediction**: Bukan KTP Indonesia")
+                st.error("❌ **Prediction**: Bukan KTP")
                 st.warning(
                     "Proses dihentikan karena dokumen yang diunggah tidak terdeteksi sebagai KTP."
                 )
@@ -477,6 +471,10 @@ elif page == "Database History":
 
     if records:
         df_records = pd.DataFrame(records)
+
+        # Samarkan NIK pada tampilan riwayat agar aman
+        if "nik" in df_records.columns:
+            df_records["nik"] = df_records["nik"].apply(mask_nik)
 
         # Reorder / Select Kolom Tampilan
         columns_to_show = [
