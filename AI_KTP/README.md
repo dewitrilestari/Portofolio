@@ -39,3 +39,14 @@ AI_KTP/
 │   └── notebook.ipynb          # Notebook Eksperimen AI Vision & Preprocessing
 └── README.md                   # Dokumentasi Proyek
 
+## ⚙️ Fitur Dashboard
+
+| Nama Fitur | Tampilan / Representasi Visual | Keterangan & Detail Teknis |
+| :--- | :--- | :--- |
+| **Document Classification** | Status Badge (*KTP / Bukan KTP*) | Mengidentifikasi apakah gambar yang diunggah adalah KTP Indonesia menggunakan model Multimodal Vision (`openai/gpt-4o-mini` / `google/gemini-2.0-flash`). |
+| **High-Precision Vision OCR** | Tabel Data Format JSON | Mengekstrak 14 bidang teks KTP (NIK, Nama, TTL, Alamat, RT/RW, Agama, dll.) secara terstruktur dengan tingkat akurasi tinggi menggunakan `openai/gpt-4o`. |
+| **Deterministic Business Rule Validation** | Tabel Status Per Aturan (*VALID / INVALID*) | Menguji keabsahan NIK: pengecekan 16 digit angka, pemutakhiran tanggal lahir, serta validasi pola jenis kelamin (pria vs wanita di mana tanggal +40). |
+| **Automated Data Masking (Privacy Protection)** | Teks Disamarkan (*Contoh: 3471XXXXXXXXXXXX*) | Menyamarkan data sensitif pengguna secara otomatis sebelum dirender ke layar untuk menjaga privasi di repositori publik. |
+| **SQLite History Logging** | Halaman *Database History* | Menyimpan data hasil ekstraksi ke database SQLite (`ktp_database.db`) dan menampilkan tabel riwayat transaksi secara terorganisir. |
+| **Secure Credentials Management** | Konfigurasi Secrets / `.env` | Mengamankan API Key menggunakan Streamlit Secrets (`st.secrets`) dan file `.env` yang dilindungi oleh `.gitignore`. |
+| **Professional Branding Footer** | Bagian Terbawah Aplikasi | Menyediakan tautan portofolio berupa ikon tautan langsung menuju profil **GitHub** dan **LinkedIn** pembuat aplikasi. |
