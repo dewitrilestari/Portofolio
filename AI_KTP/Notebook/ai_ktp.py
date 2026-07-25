@@ -24,7 +24,7 @@ from datetime import datetime
 """#SET API KEY"""
 
 OPENROUTER_API_KEY = (
-    "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"
+    "masukkan api keys kalian"
 )
 
 """#Image Classification Using AI"""
